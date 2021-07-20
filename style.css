@@ -1,40 +1,11 @@
-html {
-	position: relative;
+.jumbotron {
+  padding-top: 2rem;
+  background-color: #e2edff;
 }
 
-body{
-	margin-bottom: 80px;
-	margin-top: 20px;
+.spasi {
+  margin-top: -6rem;
 }
-.jumbotron img {
-	width: 200px;
-	border: 5px solid #666;
+.project {
+  background-color: #e2edff;
 }
- hr {
-	width: 250px;
-	border-top: 3px solid #999;
-}
-section {
-	min-height: 600px;
-}
-.portfolio {
-	background-color: #eee;
-}
-.btn {
-	margin-top: 5px;
-}
-.contact{
-	min-height: 800px;
-}
- footer {
- 	position: absolute;
- 	bottom: 0;
- 	background-color: #333;
- 	width: 100%;
- 	height: 50px;
- 	padding: 15px;
- }
- footer p {
- 	color: #aaa;
- 	font-size: 1em;
- }
