@@ -47,7 +47,7 @@
   <section class="jumbotron text-center">
     <img src="images/rony.jpg" alt="Khoirony Arief" width="200" class="rounded-circle img-thumbnail mt-5">
     <h1 class="display-4">Khoirony Arief</h1>
-    <p class="lead">Beginner Web Developer</p>
+    <p class="lead"><br/></p>
     <br><br><br><br>
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
       <path fill="#fff" fill-opacity="1" id="about"
@@ -154,9 +154,12 @@
   </script>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.7.1/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.7.1/TextPlugin.min.js"></script>
   <script>
+    gsap.registerPlugin(TextPlugin);
+    gsap.to('.lead', {duration: 2, delay: 1.5, text: 'Junior Web Developer'});
     gsap.from('.jumbotron img', {duration: 1, y:-100, opacity: 0});
-    gsap.from('.display-4', { duration: 1, x: -100, opacity: 0, delay: 0,5, ease: 'back' });
+    gsap.from('.display-4', { duration: 1.5, x: -100, opacity: 0, delay: 0.5, ease: 'back' });
   </script>
 
   
