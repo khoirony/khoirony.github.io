@@ -15,75 +15,120 @@
 
 
   <!-- My CSS -->
-  <link href="style.css" rel="stylesheet"> 
+  <link href="style1.css" rel="stylesheet"> 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;500;700&display=swap" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/c12c059ff2.js" crossorigin="anonymous"></script>
 
   <title>Portfolio Khoirony Arief</title>
 </head>
 
 <body>
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow">
+  <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom" style="height: 5rem;">
     <div class="container">
-      <a class="navbar-brand" href="#"><b>Khoirony Arief</b></a>
+      <a class="navbar-brand poppins" href="#">Khoirony Arief</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav fw-bold ms-auto poppins">
+          <li class="nav-item">
+            <a class="nav-link text-warning me-4" aria-current="page" href="#">Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link text-primary me-4" href="#about">About</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link text-primary me-4" href="#project">Portofolio</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link text-primary me-4" href="#footer">Contact</a>
+          </li>
+        </ul>
+      </div>
     </div>
   </nav>
 
   <section class="jumbotron text-center text-white">
-    <img src="images/rony.jpg" alt="Khoirony Arief" width="200" class="rounded-circle img-thumbnail mt-5">
-    <h1 class="display-4">Khoirony Arief</h1>
-    <p class="lead"><br/></p>
-    <br><br><br><br><br><br><br><br>
+    <div class="container">
+      <br><br>
+      <div class="row align-items-center">
+        <div class="col-md text-start">
+          <p class="text-primary fs-3 fw-bold mb-0">HELLO</p> 
+          <h1 class="display-1 text-primary fw-bold">I'M RONY</h1> 
+          <p class="text-dark mb-4 mt-3">I'm interested in developing website</p> 
+          <a href="mailto:khoironyarief08@gmail.com"><button type="button" class="btn btn-primary rounded-pill mb-5 ps-3 pe-3">Let's Talk!</button></a>
+        </div>
+        <div class="col-md">
+          <img src="images/landing.svg" alt="landing" class="img-fluid">
+        </div>
+      </div>
+    </div>
   </section>
 
 
-  <section class="about">
-    <div class="container text-white">
-      <br><br><br><br><br>
-      <div class="row text-center mb-4 pb-4">
-        <div class="col">
-            <h2>ABOUT ME</h2>
+  <section class="about" id="about">
+    <div class="container text-white"> 
+      <div class="row justify-content-center align-items-center">
+        <div class="col-md-4">
+          <img src="images/rony.jpg" alt="profile" class="img-thumbnail rounded-circle border-0">
         </div>
-      </div>
-      <div class="row justify-content-center mb-4 m-1">
-        <div class="col-md-4 m-2 p-2" data-aos="fade-right" data-aos-delay="100" data-aos-offset="300">
-          A man who has an interest in web programming, especially back-end programming, to be someone who is competent in that
+        
+        <div class="col-md-6 text-center">
+          <br>
+          <p class="fw-bold fs-3">HI, Nice to meet you.</p> 
+          <br>
+          I'm a man who has an interest in web programming, especially back-end programming, to be someone who is competent in that
           field is my dream, therefore I will try to continue to develop myself by learning the latest developments in programming
           technology.
-        </div>
-        <div class="col-md-4 m-2 p-2" data-aos="fade-left" data-aos-delay="200" data-aos-offset="300">
           I was born in Lamongan, and still live in Lamongan. have some expertise in web programming including: HTML, CSS, Javascript, Bootstrap, PHP, OOP, Codeigniter, MySql, Git, etc.
           <br><br>
-          My Resume <a href="Resume Khoironi Arief.pdf">Download Here</a>
+          <a href="Resume Khoironi Arief.pdf">
+          <button type="button" class="btn btn-warning rounded-pill mb-5 ps-3 pe-3 fw-bold text-dark mt-3">Download CV</button></a>
         </div>
       </div>
       <br>
-      <div class="container mb-4 pb-3 text-end">
-          <p>
-            <a href="https://www.linkedin.com/in/khoirony-arief/" data-aos="zoom-in" data-aos-delay="100" data-aos-duration="2000" class="m-1"><i class="bi bi-linkedin fs-1"></i></a>
-            <a href="https://github.com/khoirony" data-aos="zoom-in" data-aos-delay="200" data-aos-duration="2000" class="m-1"><i class="bi bi-github fs-1"></i></a>
-            <a href="mailto:khoironyarief08@gmail.com" data-aos="zoom-in" data-aos-delay="300" data-aos-duration="2000" class="m-1"><i class="bi bi-envelope-fill fs-1"></i></a>
-            <a href="https://wa.me/6283870461640" data-aos="zoom-in" data-aos-delay="400" data-aos-duration="2000" class="m-1"><i class="bi bi-whatsapp fs-1"></i> </a>
-          </p>
-      </div>
+      
     </div>
-    <br><br><br><br>
   </section>
+  
 
   <section class="project" id="project">
     <div class="container text-white pb-5">
-      <br><br><br><br>
-      <div class="row text-center mb-4 pb-3">
-        <div class="col">
-          <h2>MY PROJECT</h2>
-          <br><br>
+
+      <div class="row justify-content-center">
+        <div class="col-8 align-self-center panel pb-5 pt-5">
+          <p class="text-center text-primary fs-5 fw-bold mb-0">SPESIALIZING IN</p> 
+          <br>
+          <div class="row justify-content-center">
+            <div class="col-4 p-1">
+              <div class="text-center"><i class="text-dark fs-1 fas fa-code"></i></div>
+              <p class="text-center text-primary fs-6 fw-bold pt-3 mb-0">Web Developer</p>
+              <p class="text-center text-dark fs-6 pt-3 mt-0">i create a website according to your request.</p>
+            </div>
+            <div class="col-4 p-1 align-content-center ">
+              <div class="text-center"><i class="text-dark fs-1 fas fa-palette"></i></div>
+              <p class="text-center text-primary fs-6 fw-bold pt-3 mb-0">Graphic Designer</p>
+              <p class="text-center text-dark fs-6 pt-3 mt-0">i create designs that provide solution to problems.</p>
+            </div>
+          </div>
+      
+      
         </div>
       </div>
+
+      <br><br><br><br>
+      <p class="text-primary text-center fs-1 fw-bold">MY PROJECTS</p>
+      <br><br>
       <div class="row justify-content-center">
         <div class="col-md-4 mb-2">
-          <div class="card isiprojek" data-aos="flip-down" data-aos-delay="100" data-aos-offset="300">
+          <div class="card isiprojek border-0 shadow mb-1">
             <a href="https://suratdispendik.000webhostapp.com">
             <img src="images/1.png" class="card-img-top" alt="..."></a>
             <div class="card-body">
-              <p class="card-text">Project web CRUD pencatatan surat masuk dan surat keluar.
+              <p class="card-text text-dark">Project web CRUD pencatatan surat masuk dan surat keluar.
               </p>
               <a class="btn btn-secondary btn-sm mr-2 rounded-0" href="https://suratdispendik.000webhostapp.com">DEMO</a>  
               <a class="btn btn-secondary btn-sm ml-2 rounded-0" href="https://github.com/khoirony/dispendik">SOURCE CODE</a>
@@ -91,11 +136,11 @@
           </div>
         </div>
         <div class="col-md-4 mb-2">
-          <div class="card isiprojek" data-aos="flip-down" data-aos-delay="200" data-aos-offset="300">
+          <div class="card isiprojek border-0 shadow mb-1">
             <a href="https://bumicoco.com/">
               <img src="images/2.png" class="card-img-top" alt="..."></a>
             <div class="card-body">
-              <p class="card-text">Project web untuk profil perusahaan expor kelapa dan hasil olahan kelapa.
+              <p class="card-text text-dark">Project web untuk profil perusahaan expor kelapa dan hasil olahan kelapa.
               </p>
               <a class="btn btn-secondary btn-sm mr-2 rounded-0" href="https://bumicoco.com">DEMO</a>
               <a class="btn btn-secondary btn-sm ml-2 rounded-0" href="https://github.com/khoirony/bumicoco">SOURCE CODE</a>
@@ -103,11 +148,11 @@
           </div>
         </div>
         <div class="col-md-4 mb-2">
-          <div class="card isiprojek" data-aos="flip-down" data-aos-delay="300" data-aos-offset="300">
+          <div class="card isiprojek border-0 shadow mb-1">
             <a href="https://suratdispendik.000webhostapp.com/login.php?login=">
               <img src="images/3.png" class="card-img-top" alt="..."></a>
             <div class="card-body">
-              <p class="card-text">Project tambahan crud surat masuk dan keluar, login dan register.
+              <p class="card-text text-dark">Project tambahan crud surat masuk dan keluar, login dan register.
               </p>
               <a class="btn btn-secondary btn-sm mr-2 rounded-0" href="https://suratdispendik.000webhostapp.com/login.php?login=">DEMO</a>
               <a class="btn btn-secondary btn-sm ml-2 rounded-0" href="https://github.com/khoirony/dispendik">SOURCE CODE</a>
@@ -118,9 +163,16 @@
     </div>
   </section>
 
-  <footer class="bg-dark text-white text-center">
-    <div class="container p-4 pb-5">
-      © Created By Khoirony Arief.
+  <footer class="bg-grey text-white text-center" id="footer">
+    <div class="container pt-5 pb-4">
+      
+      <p class="text-dark">
+        <a href="https://www.linkedin.com/in/khoirony-arief/" class="m-3 text-primary me-5"><i class="bi bi-linkedin fs-2"></i></a>
+        <a href="https://github.com/khoirony" class="m-3 text-primary me-5"><i class="bi bi-github fs-2"></i></a>
+        <a href="mailto:khoironyarief08@gmail.com" class="m-3 text-primary me-5"><i class="bi bi-envelope-fill fs-2"></i></a>
+        <a href="https://wa.me/6283870461640" class="m-3 text-primary"><i class="bi bi-whatsapp fs-2"></i> </a>
+      </p>
+      <p class="text-dark text-center fw-light poppins">&copy;<span class="text-primary">2021 All Right Reserved</span>  - Developed by Khoirony Arief</p>
     </div>
   </footer>
   

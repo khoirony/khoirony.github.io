@@ -1,0 +1,39 @@
+.jumbotron {
+  padding-top: 6rem;
+  background-color: #fff;
+  height: 100vh;
+}
+
+.spasi {
+  margin-top: -6rem;
+}
+
+.panel {
+  box-shadow: 0 3px 20px rgba(0, 0, 0, 0.5);
+  border-radius: 20px;
+  margin-top: -7rem;
+  background-color: #fff;
+}
+
+.about {
+  padding-top: 7rem;
+  padding-bottom: 12rem;
+  background-color: #800080;
+  position: static;
+}
+
+.project {
+  background-color: #f5f5f5;
+}
+
+.isiprojek {
+  background-color: #fff;
+}
+
+.poppins {
+  font-family: "Poppins", sans-serif;
+}
+
+.bg-grey {
+  background-color: #d4dcec;
+}
