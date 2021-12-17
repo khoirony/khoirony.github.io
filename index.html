@@ -58,8 +58,8 @@
         <div class="col-md text-start">
           <p class="text-primary fs-3 fw-bold mb-0">HELLO</p> 
           <h1 class="display-1 text-primary fw-bold">I'M RONY</h1> 
-          <p class="text-dark mb-4 mt-3">I'm interested in developing website</p> 
-          <a href="mailto:khoironyarief08@gmail.com"><button type="button" class="btn btn-primary rounded-pill mb-5 ps-3 pe-3">Let's Talk!</button></a>
+          <p class="lead text-dark mb-4 mt-3">I'm interested in developing website</p> 
+          <a href="mailto:khoironyarief08@gmail.com"><button type="button" class=" btn1 btn btn-primary rounded-pill mb-5 ps-3 pe-3">Let's Talk!</button></a>
         </div>
         <div class="col-md">
           <img src="images/landing.svg" alt="landing" class="img-fluid">
@@ -72,11 +72,11 @@
   <section class="about" id="about">
     <div class="container text-white"> 
       <div class="row justify-content-center align-items-center">
-        <div class="col-md-4">
+        <div class="col-md-4" data-aos="fade-right" data-aos-delay="100">
           <img src="images/rony.jpg" alt="profile" class="img-thumbnail rounded-circle border-0">
         </div>
         
-        <div class="col-md-6 text-center">
+        <div class="col-md-6 text-center" data-aos="fade-left" data-aos-delay="100" data-aos-duration="1500">
           <br>
           <p class="fw-bold fs-3">HI, Nice to meet you.</p> 
           <br>
@@ -86,7 +86,7 @@
           I was born in Lamongan, and still live in Lamongan. have some expertise in web programming including: HTML, CSS, Javascript, Bootstrap, PHP, OOP, Codeigniter, MySql, Git, etc.
           <br><br>
           <a href="Resume Khoironi Arief.pdf">
-          <button type="button" class="btn btn-warning rounded-pill mb-5 ps-3 pe-3 fw-bold text-dark mt-3">Download CV</button></a>
+          <button type="button" data-aos="zoom-in-down" data-aos-delay="500" data-aos-duration="1500" class="btn btn-warning rounded-pill mb-5 ps-3 pe-3 fw-bold text-dark mt-3">Download CV</button></a>
         </div>
       </div>
       <br>
@@ -98,7 +98,7 @@
   <section class="project" id="project">
     <div class="container text-white pb-5">
 
-      <div class="row justify-content-center">
+      <div class="row justify-content-center" data-aos="fade-up" data-aos-duration="1500" data-aos-once="true">
         <div class="col-8 align-self-center panel pb-5 pt-5">
           <p class="text-center text-primary fs-5 fw-bold mb-0">SPESIALIZING IN</p> 
           <br>
@@ -185,8 +185,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.7.1/TextPlugin.min.js"></script>
   <script>
     gsap.registerPlugin(TextPlugin);
-    gsap.to('.lead', {duration: 2, delay: 1.5, text: 'Junior Web Developer'});
+    gsap.to('.lead', {duration: 2, delay: 1.5, text: 'I\'m a Junior Web Developer'});
     gsap.from('.jumbotron img', {duration: 1, y:-100, opacity: 0});
+    gsap.from('.btn1', { duration: 1, delay: 3, y: -100, opacity: 0 });
     gsap.from('.display-4', { duration: 1.5, x: -100, opacity: 0, delay: 0.5, ease: 'back' });
     gsap.from('.navbar', { duration: 1.5, y: -100, opacity: 0, ease: 'bounce' });
   </script>
