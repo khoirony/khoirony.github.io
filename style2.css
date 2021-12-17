@@ -26,6 +26,10 @@
   background-color: #f5f5f5;
 }
 
+#gradient {
+  background-image: linear-gradient(#f5f5f5, #ffffff);
+}
+
 .isiprojek {
   background-color: #fff;
 }
@@ -36,4 +40,16 @@
 
 .bg-grey {
   background-color: #d4dcec;
+}
+
+.formcustom {
+  background-color: #fcecdc;
+}
+
+.carousel-indicators [data-bs-target] {
+  position: relative;
+  bottom: -100px;
+  width: 10px;
+  height: 10px;
+  border-radius: 100%;
 }
