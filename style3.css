@@ -38,12 +38,28 @@
   font-family: "Poppins", sans-serif;
 }
 
+.roboto {
+  font-family: "Roboto", sans-serif;
+}
+
 .bg-grey {
   background-color: #d4dcec;
 }
 
 .formcustom {
   background-color: #fcecdc;
+}
+
+.text-landing1 {
+  color: #ee6454;
+}
+
+.uk1 {
+  font-size: 14px;
+}
+
+.text-landing2 {
+  color: #1c345c;
 }
 
 .carousel-indicators [data-bs-target] {

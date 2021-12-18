@@ -14,17 +14,18 @@
   <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
 
   <!-- My CSS -->
-  <link href="style2.css" rel="stylesheet"> 
+  <link href="style3.css" rel="stylesheet"> 
 
   <!-- Font From Google -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;500;700&family=Roboto:wght@900&display=swap"
+    rel="stylesheet">
   
   <!-- Icon From FontAwesome -->
   <script src="https://kit.fontawesome.com/c12c059ff2.js" crossorigin="anonymous"></script>
 
-  <title>Portfolio Khoirony Arief</title>
+  <title>Khoirony Arief Personal Website</title>
 </head>
 
 <body>
@@ -60,18 +61,20 @@
   <!-- Landing Page -->
   <section class="jumbotron text-center text-white">
     <div class="container">
-      <br><br>
+      <br>
       <div class="row align-items-center">
         <div class="col-md text-start">
-          <p class="text-primary fs-3 fw-bold mb-0">HELLO</p> 
-          <h1 class="display-1 text-primary fw-bold">I'M RONY</h1> 
-          <p class="lead text-dark mb-4 mt-3">I'm interested in developing website</p> 
+          <p class="text-landing2 fs-4 fw-bold mb-0">HELLO</p> 
+          <h1 class="display-1 roboto text-landing2 fw-bolder">I AM <span class="text-landing1">RONY</span></h1> 
+          <p class="lead text-dark fs-3 mt-3 mb-0"><br></p> 
+          <p class="lead2 text-dark fw-light fs-4 mb-4 mt-0"><br><br></p>
           <a href="#contact"><button type="button" class=" btn1 btn btn-primary rounded-pill mb-5 ps-3 pe-3">Let's Talk!</button></a>
         </div>
         <div class="col-md">
-          <img src="images/landing.svg" alt="landing" class="img-fluid">
+          <img src="images/landingpage.svg" alt="landing" class="img-fluid">
         </div>
       </div>
+      <br><br>     
     </div>
   </section>
   <!-- End Of Landing Page -->
@@ -223,12 +226,15 @@
         <!-- End Of Button Next -->
 
       </div>
+
+      <!-- Carousel Indicator -->
       <div class="carousel-indicators">
         <button type="button" data-bs-target="#carouselExampleDark" data-bs-slide-to="0" class="active" aria-current="true"
           aria-label="Slide 1"></button>
         <button type="button" data-bs-target="#carouselExampleDark" data-bs-slide-to="1" aria-label="Slide 2"></button>
         <button type="button" data-bs-target="#carouselExampleDark" data-bs-slide-to="2" aria-label="Slide 3"></button>
       </div>
+
     </div>
     <!-- End Of My Project -->
     <br><br><br><br>
@@ -236,17 +242,17 @@
     <br><br><br>
   </section>
   
-
+  <!-- Color Gradient -->
   <div class="gradient" id="gradient">
     <p class="poppins text-primary text-center fs-1 fw-bold mb-0">GET IN TOUCH</p>
     <p class="poppins fw-light text-center mt-0">
       Interesting in working together? <br>
       Feel free to contact me for any project or collaboration.
     </p>
-    
     <br>
   </div>
   
+  <!-- Contact Section -->
   <section class="contact">
     <div class="container">
       <br>
@@ -255,7 +261,11 @@
           <img src="images/contact.svg" alt="contact" class="img-fluid">
         </div>
         <div class="col-md-6">
+          
+          <!-- Notif after send message -->
           <div id="status"><br></div>
+
+          <!-- Form Message -->
           <form action="https://formspree.io/f/mjvlvlwq" method="post" id="formcontact">
             <div class="mb-3 mt-1">
               <input type="text" class="form-control form-control-lg formcustom border-0" id="Nama" name="Nama Lengkap" placeholder="Full Name">
@@ -270,10 +280,13 @@
               <button type="submit" class="btn btn-primary rounded-pill ps-4 pe-4 poppins">Send</button>
             </center>
           </form>
+          <!-- End Of Form Message -->
+
         </div>
       </div>
     </div>
   </section>
+  <!-- End Of Contact Section -->
   <br><br><br><br><br>
 
   <!-- Footer -->
@@ -301,13 +314,14 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.7.1/TextPlugin.min.js"></script>
   <script>
     gsap.registerPlugin(TextPlugin);
-    gsap.to('.lead', {duration: 2, delay: 1.5, text: 'I\'m a Junior Web Developer'});
-    gsap.from('.jumbotron img', {duration: 1, y:-100, opacity: 0});
-    gsap.from('.btn1', { duration: 1, delay: 3, y: -100, opacity: 0 });
-    gsap.from('.navbar', { duration: 1.5, y: -100, opacity: 0, ease: 'bounce' });
+    gsap.to('.lead', {duration: 2, delay: 0.5, text: 'I\'m a Junior Web Developer'});
+    gsap.to('.lead2', { duration: 2.5, delay: 2, text: 'Welcome to my personal website, wanna discuss about something?' });
+    gsap.from('.jumbotron img', {duration: 2, y: 50, opacity: 0, ease: 'expo.out'});
+    gsap.from('.btn1', { duration: 1, delay: 4, y: -100, opacity: 0 });
+    //gsap.from('.navbar', { duration: 1.5, y: -100, opacity: 0, ease: 'bounce' });
   </script>
 
-  <!-- Place this script at the end of the body tag -->
+  <!-- Script send email 3rd party -->
   <script>
     var form = document.getElementById("formcontact");
 
