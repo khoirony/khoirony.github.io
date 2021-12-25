@@ -61,6 +61,10 @@
   color: #1c345c;
 }
 
+.geserkiri {
+  margin-left: -50px;
+}
+
 .carousel-indicators [data-bs-target] {
   position: relative;
   bottom: -100px;
