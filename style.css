@@ -129,8 +129,8 @@ body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; 
 
     /* 5. Tombol Chat ditaruh di tengah atas layar HP */
     #chat-toggle-btn {
-        bottom: auto; top: 20px; padding: 8px 15px; font-size: 12px;
+        bottom: auto; top: 15px; padding: 8px 15px; font-size: 12px;
     }
 
-    #sound-btn { top: 50px; left: 10px; padding: 8px 15px; font-size: 12px; }
+    #sound-btn { top: 60px; left: 10px; padding: 8px 15px; font-size: 12px; }
 }
