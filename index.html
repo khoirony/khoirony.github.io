@@ -12,6 +12,17 @@
         #info { position: absolute; top: 15px; width: 100%; text-align: center; color: white; z-index: 100; pointer-events: none; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
         .controls-hint { font-size: 14px; background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 20px; display: inline-block; margin-top: 10px; border: 1px solid rgba(255,255,255,0.2);}
         
+        /* --- UI WAKTU (HUD CLOCK) --- */
+        #hud-time {
+            position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.5); color: white; 
+            padding: 10px 20px; border-radius: 12px; text-align: right; pointer-events: none; 
+            border: 1px solid rgba(255,255,255,0.2); z-index: 100; backdrop-filter: blur(4px); 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+        #hud-day { font-size: 14px; font-weight: bold; color: #ffd700; text-transform: uppercase; letter-spacing: 1px;}
+        #hud-clock { font-size: 28px; font-weight: bold; margin: 2px 0; font-variant-numeric: tabular-nums; }
+        #hud-period { font-size: 12px; color: #e2e8f0; font-weight: 600; }
+
         #mobile-ui { position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; z-index: 99; display: none; }
         #joystick-zone { position: absolute; bottom: 30px; left: 30px; width: 120px; height: 120px; pointer-events: auto; }
         #jump-btn {
@@ -22,7 +33,6 @@
         }
         #jump-btn:active { background: rgba(255, 255, 255, 0.6); transform: scale(0.95); }
 
-        /* --- UI SMART ACTION (TIDUR / NAIK) --- */
         #action-btn {
             position: absolute; bottom: 150px; right: 40px; padding: 15px 25px; border-radius: 30px;
             background: rgba(255, 215, 0, 0.8); border: 2px solid white; color: black; font-weight: bold; font-size: 16px;
@@ -40,14 +50,24 @@
         @media (max-width: 800px) { 
             #mobile-ui { display: block; } 
             .controls-hint { display: none; }
+            #hud-time { top: 10px; right: 10px; padding: 8px 15px; }
+            #hud-clock { font-size: 20px; }
+            #hud-day { font-size: 11px; }
+            #hud-period { font-size: 10px; }
             #action-btn { bottom: 130px; right: 30px; font-size: 14px; padding: 12px 20px;}
         }
     </style>
 </head>
 <body>
     <div id="info">
-        <h1 style="margin:0; font-size: 24px;">Khoirony Arief - Mini World</h1>
+        <h1 style="margin:0; font-size: 24px;">Khoirony Arief - Open World</h1>
         <div class="controls-hint"><b>WASD:</b> Jalan | <b>Spasi:</b> Lompat | <b>Dekati Hewan/Kasur</b> untuk Aksi</div>
+    </div>
+
+    <div id="hud-time">
+        <div id="hud-day">Day 1</div>
+        <div id="hud-clock">08:00</div>
+        <div id="hud-period">Pagi</div>
     </div>
 
     <div id="action-btn">Aksi</div>
@@ -72,10 +92,59 @@
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
         // ==========================================
+        // 0. LOGIKA WAKTU IN-GAME (BUATAN SENDIRI)
+        // ==========================================
+        let gameTime = 8 * 60; // Mulai jam 08:00 pagi (dalam menit)
+        let gameDay = 1;
+        let isDay = true;
+        let timeSpeed = 1; // 1 detik dunia nyata = 1 menit di game
+
+        // Element UI
+        const uiDay = document.getElementById('hud-day');
+        const uiClock = document.getElementById('hud-clock');
+        const uiPeriod = document.getElementById('hud-period');
+
+        function updateGameTime() {
+            // Tambah waktu
+            gameTime += timeSpeed;
+
+            // Reset hari
+            if (gameTime >= 24 * 60) {
+                gameTime = 0;
+                gameDay++;
+            }
+
+            const h = Math.floor(gameTime / 60);
+            const m = Math.floor(gameTime % 60);
+
+            // Tentukan Periode dan Siang/Malam
+            let period = 'Malam';
+            let newIsDay = false;
+
+            if (h >= 6 && h < 10) { period = 'Pagi'; newIsDay = true; }
+            else if (h >= 10 && h < 15) { period = 'Siang'; newIsDay = true; }
+            else if (h >= 15 && h < 18) { period = 'Sore'; newIsDay = true; }
+            else { period = 'Malam'; newIsDay = false; }
+
+            // Trigger perubahan visual JIKA status siang/malam berubah secara otomatis
+            if (newIsDay !== isDay && scene) {
+                isDay = newIsDay;
+                changeEnvironmentLight();
+            }
+
+            // Update Text UI
+            uiDay.innerText = `Hari ke-${gameDay}`;
+            uiClock.innerText = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+            uiPeriod.innerText = period;
+        }
+
+        // Jalankan jam setiap detik
+        setInterval(updateGameTime, 1000);
+
+        // ==========================================
         // 1. SETUP SCENE, CAMERA, RENDERER
         // ==========================================
         const scene = new THREE.Scene();
-        let isDay = true;
         scene.background = new THREE.Color(0x87CEEB);
         scene.fog = new THREE.Fog(0x87CEEB, 30, 150);
 
@@ -99,6 +168,17 @@
         dirLight.shadow.camera.far = 300;
         dirLight.shadow.mapSize.width = 2048; dirLight.shadow.mapSize.height = 2048;
         scene.add(dirLight);
+
+        // Fungsi Global untuk Mengganti Cahaya Alam (Digunakan oleh Jam dan Fitur Tidur)
+        function changeEnvironmentLight() {
+            if(isDay) {
+                scene.background = new THREE.Color(0x87CEEB); scene.fog.color.setHex(0x87CEEB);
+                dirLight.intensity = 1.0; ambientLight.intensity = 0.5; document.body.style.background = '#87CEEB';
+            } else {
+                scene.background = new THREE.Color(0x05051a); scene.fog.color.setHex(0x05051a);
+                dirLight.intensity = 0.1; ambientLight.intensity = 0.1; document.body.style.background = '#05051a';
+            }
+        }
 
         // ==========================================
         // 2. SISTEM FISIKA & ARRAY PENYIMPAN
@@ -344,18 +424,16 @@
         let mountedPig = null;
 
         actionBtn.addEventListener('click', () => {
-            // JIKA SEDANG NAIK HEWAN -> TURUN
             if (isRiding) {
                 isRiding = false;
-                mountedPig.state = 'idle'; // Kembalikan ke AI
+                mountedPig.state = 'idle'; 
                 mountedPig = null;
-                player.position.x += 1; // Geser sedikit agar tidak menyangkut di badan babi
+                player.position.x += 1; 
                 player.position.y += 0.5;
                 actionBtn.style.display = 'none';
                 return;
             }
 
-            // JIKA DEKAT KASUR -> TIDUR
             if(!isSleeping && activeBed) {
                 isSleeping = true;
                 actionBtn.style.display = 'none';
@@ -368,14 +446,20 @@
 
                 fadeOverlay.style.opacity = 1;
                 setTimeout(() => {
-                    isDay = !isDay;
-                    if(isDay) {
-                        scene.background = new THREE.Color(0x87CEEB); scene.fog.color.setHex(0x87CEEB);
-                        dirLight.intensity = 1.0; ambientLight.intensity = 0.5; document.body.style.background = '#87CEEB';
+                    
+                    // PERCEPAT WAKTU (TIME SKIP)
+                    if (isDay) {
+                        // Jika tidur siang, bangun jam 18:00 (Malam)
+                        gameTime = 18 * 60;
+                        isDay = false;
                     } else {
-                        scene.background = new THREE.Color(0x05051a); scene.fog.color.setHex(0x05051a);
-                        dirLight.intensity = 0.1; ambientLight.intensity = 0.1; document.body.style.background = '#05051a';
+                        // Jika tidur malam, bangun jam 06:00 (Pagi keesokan harinya)
+                        gameTime = 6 * 60;
+                        gameDay++;
+                        isDay = true;
                     }
+                    changeEnvironmentLight(); // Update langit
+
                     setTimeout(() => {
                         fadeOverlay.style.opacity = 0;
                         player.position.copy(previousPlayerPos);
@@ -386,11 +470,10 @@
                 return;
             }
 
-            // JIKA DEKAT HEWAN -> NAIK
             if(!isSleeping && activePig) {
                 isRiding = true;
                 mountedPig = activePig;
-                mountedPig.state = 'ridden'; // Matikan AI Hewan saat dinaiki
+                mountedPig.state = 'ridden'; 
                 return;
             }
         });
@@ -400,13 +483,9 @@
         // ==========================================
         function animate() {
             requestAnimationFrame(animate);
-
-            // Tentukan Kecepatan: Jalan biasa 0.25, Naik Babi ngebut 0.45!
             const currentSpeed = isRiding ? 0.45 : 0.25;
 
-            // --- A. LOGIKA AI NPC HEWAN ---
             npcs.forEach(npc => {
-                // Lewati AI jika babi sedang ditunggangi pemain
                 if (npc.state === 'ridden') return;
 
                 npc.timer -= 0.016; 
@@ -440,7 +519,6 @@
                 }
             });
 
-            // --- B. LOGIKA ATAP TRANSPARAN (Rumah) ---
             let isInsideHouse = false;
             for (let house of interactiveHouses) {
                 if (house.box.containsPoint(player.position)) {
@@ -451,7 +529,6 @@
             }
             if (isInsideHouse) controls.maxDistance = 5; else controls.maxDistance = 20;
 
-            // --- C. DETEKSI AKSI PINTAR (TIDUR ATAU NAIK HEWAN) ---
             if (!isSleeping) {
                 activeBed = null;
                 activePig = null;
@@ -460,14 +537,11 @@
                     actionBtn.style.display = 'block';
                     actionBtn.innerHTML = '🚶 Turun';
                 } else {
-                    // Cari kasur terdekat
                     for (let bed of beds) {
                         if (bed.triggerBox.containsPoint(player.position)) {
                             activeBed = bed; break;
                         }
                     }
-                    
-                    // Jika tidak ada kasur, cari babi terdekat
                     if (!activeBed) {
                         for (let npc of npcs) {
                             if (player.position.distanceTo(npc.mesh.position) < 3.0) {
@@ -476,39 +550,27 @@
                         }
                     }
 
-                    // Tampilkan UI Sesuai Jarak
-                    if (activeBed) {
-                        actionBtn.style.display = 'block'; actionBtn.innerHTML = '💤 Tidur';
-                    } else if (activePig) {
-                        actionBtn.style.display = 'block'; actionBtn.innerHTML = '🐎 Naik';
-                    } else {
-                        actionBtn.style.display = 'none';
-                    }
+                    if (activeBed) { actionBtn.style.display = 'block'; actionBtn.innerHTML = '💤 Tidur'; } 
+                    else if (activePig) { actionBtn.style.display = 'block'; actionBtn.innerHTML = '🐎 Naik'; } 
+                    else { actionBtn.style.display = 'none'; }
                 }
             }
 
-            // --- D. FISIKA PEMAIN & NAIK HEWAN ---
             if (!isSleeping) {
                 let currentGroundY = -5;
                 raycaster.set(new THREE.Vector3(player.position.x, player.position.y + 1, player.position.z), new THREE.Vector3(0, -1, 0));
                 let intersects = raycaster.intersectObjects(solidGrounds, false);
                 if (intersects.length > 0) currentGroundY = intersects[0].point.y;
 
-                // Jika sedang naik hewan, karakter berada 1 meter di atas tanah!
                 let targetY = isRiding ? currentGroundY + 1.0 : currentGroundY;
 
                 velocityY += gravity; 
                 player.position.y += velocityY;
                 if (player.position.y <= targetY) { 
-                    player.position.y = targetY; 
-                    velocityY = 0; 
-                    isJumping = false; 
+                    player.position.y = targetY; velocityY = 0; isJumping = false; 
                 }
                 
-                if (keys[' '] && !isJumping) { 
-                    velocityY = 0.35; 
-                    isJumping = true; 
-                }
+                if (keys[' '] && !isJumping) { velocityY = 0.35; isJumping = true; }
 
                 const camForward = new THREE.Vector3(); camera.getWorldDirection(camForward);
                 camForward.y = 0; camForward.normalize();
@@ -527,25 +589,18 @@
                     const nextPos = player.position.clone().addScaledVector(moveDir, currentSpeed);
                     let isColliding = false;
 
-                    // Cek Tabrakan Dinding Statis
                     playerBox.min.set(nextPos.x - 0.25, player.position.y, nextPos.z - 0.25);
                     playerBox.max.set(nextPos.x + 0.25, player.position.y + 1.5, nextPos.z + 0.25);
                     for (let box of wallObjects) {
                         if (playerBox.intersectsBox(box)) { isColliding = true; break; }
                     }
 
-                    // Cek Tabrakan Dinamis (NPC)
                     if (!isColliding) {
                         for (let npc of npcs) {
-                            // Abaikan tabrakan dengan babi yang sedang kita naiki!
                             if (npc === mountedPig) continue;
-                            
                             let npcBox = new THREE.Box3().setFromObject(npc.mesh);
                             npcBox.expandByScalar(-0.1); 
-                            if (playerBox.intersectsBox(npcBox)) { 
-                                isColliding = true; 
-                                break; 
-                            }
+                            if (playerBox.intersectsBox(npcBox)) { isColliding = true; break; }
                         }
                     }
 
@@ -557,21 +612,17 @@
                     player.rotation.x = 0;
                     player.lookAt(player.position.clone().add(moveDir));
                     
-                    // ANIMASI SAAT BERJALAN
                     if (isRiding) {
-                        // Pose karakter saat menunggangi hewan (Kaki agak mengangkang, tangan memegang kendali)
                         armL.rotation.x = 0.4; armR.rotation.x = 0.4;
                         legL.rotation.x = -0.4; legR.rotation.x = -0.4;
                         legL.rotation.z = -0.2; legR.rotation.z = 0.2;
                         
-                        // Animasi Lari Babi
-                        mountedPig.moveTime += 0.4; // Kaki babi bergerak cepat
+                        mountedPig.moveTime += 0.4; 
                         mountedPig.legs[0].rotation.x = Math.sin(mountedPig.moveTime) * 0.8; 
                         mountedPig.legs[3].rotation.x = Math.sin(mountedPig.moveTime) * 0.8; 
                         mountedPig.legs[1].rotation.x = -Math.sin(mountedPig.moveTime) * 0.8; 
                         mountedPig.legs[2].rotation.x = -Math.sin(mountedPig.moveTime) * 0.8; 
                     } else {
-                        // Animasi Lari Normal Pemain
                         moveTime += (0.25 * (isJoyActive ? Math.max(Math.abs(joyX), Math.abs(joyY)) : 1)); 
                         armL.rotation.x = Math.sin(moveTime) * 0.8; armR.rotation.x = -Math.sin(moveTime) * 0.8;
                         legL.rotation.x = -Math.sin(moveTime) * 0.8; legR.rotation.x = Math.sin(moveTime) * 0.8;
@@ -579,7 +630,6 @@
                     }
 
                 } else {
-                    // SAAT BERHENTI DIAM
                     player.rotation.x = 0;
                     if (isRiding) {
                         armL.rotation.x = 0.4; armR.rotation.x = 0.4;
@@ -592,12 +642,11 @@
                     }
                 }
 
-                // VISUAL BINDING (Menyatukan Babi dengan Karakter)
                 if (isRiding && mountedPig) {
                     mountedPig.mesh.position.set(player.position.x, player.position.y - 1.0, player.position.z);
                     mountedPig.mesh.rotation.y = player.rotation.y;
                 }
-            } // End of !isSleeping
+            } 
 
             controls.target.set(player.position.x, player.position.y + 1.5, player.position.z);
             controls.update();
