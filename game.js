@@ -56,13 +56,35 @@ socket.on('chatUpdate', (data) => {
     if (targetPlayer) showChatBubble(targetPlayer, data.message);
 });
 
-// --- PENGIRIM CHAT BARU ---
+const chatContainer = document.getElementById('chat-container');
+const chatToggleBtn = document.getElementById('chat-toggle-btn');
+
+// --- LOGIKA TOMBOL CHAT (TAMPILKAN) ---
+chatToggleBtn.addEventListener('click', () => {
+    chatToggleBtn.style.display = 'none'; // Hilangkan tombol
+    chatContainer.style.display = 'block'; // Munculkan kotak input
+    chatInput.focus(); // Langsung siap ngetik tanpa perlu diklik lagi
+});
+
+// --- PENGIRIM CHAT ---
 chatInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && chatInput.value.trim() !== "") {
-        socket.emit('chatMessage', chatInput.value);
+    if (e.key === 'Enter') {
+        if (chatInput.value.trim() !== "") {
+            socket.emit('chatMessage', chatInput.value);
+        }
+        // Bersihkan, sembunyikan kotak input, kembalikan tombol
         chatInput.value = "";
-        chatInput.blur(); // Menghilangkan fokus dari input agar bisa jalan pakai WASD lagi
+        chatInput.blur();
+        chatContainer.style.display = 'none';
+        chatToggleBtn.style.display = 'block';
     }
+});
+
+// --- TUTUP OTOMATIS JIKA TIDAK JADI NGETIK ---
+// Kalau kotak chat sedang terbuka tapi user malah ngeklik area game (blur)
+chatInput.addEventListener('blur', () => {
+    chatContainer.style.display = 'none';
+    chatToggleBtn.style.display = 'block';
 });
 
 socket.on('connect_error', () => {
