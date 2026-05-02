@@ -124,13 +124,13 @@
         import { io } from "https://cdn.socket.io/4.7.4/socket.io.esm.min.js";
 
         // ==========================================
-        // 0. LOGIKA ONLINE PLAYERS (REAL-TIME VIA VPS)
+        // 0. LOGIKA MULTIPLAYER (REAL-TIME)
         // ==========================================
         const onlineCountElement = document.getElementById('online-count');
         const onlineDot = document.getElementById('online-dot');
-        
-        // Ganti URL ini dengan URL subdomain kamu yang baru
         const socket = io("https://3dgame-api.khoirony.fun");
+        
+        let remotePlayers = {}; // Menyimpan mesh player lain
 
         socket.on('connect', () => {
             console.log("Connected to Real-time Backend");
@@ -140,6 +140,33 @@
 
         socket.on('playerCountUpdate', (count) => {
             onlineCountElement.innerText = count;
+        });
+
+        // Sinkronisasi posisi player lain
+        socket.on('updatePlayers', (serverPlayers) => {
+            for (let id in serverPlayers) {
+                if (id === socket.id) continue; // Abaikan diri sendiri
+
+                const pData = serverPlayers[id];
+
+                // Jika player belum ada di dunia kita, buatkan modelnya
+                if (!remotePlayers[id]) {
+                    remotePlayers[id] = createOtherPlayerModel();
+                    scene.add(remotePlayers[id]);
+                }
+
+                // Update posisi & rotasi (pakai lerp agar halus)
+                remotePlayers[id].position.lerp(new THREE.Vector3(pData.position.x, pData.position.y, pData.position.z), 0.2);
+                remotePlayers[id].rotation.y = pData.rotation.y;
+            }
+
+            // Hapus player yang disconnect dari layar
+            for (let id in remotePlayers) {
+                if (!serverPlayers[id]) {
+                    scene.remove(remotePlayers[id]);
+                    delete remotePlayers[id];
+                }
+            }
         });
 
         socket.on('connect_error', () => {
@@ -152,6 +179,21 @@
             onlineCountElement.innerText = "Reconnecting...";
             onlineDot.classList.remove('active');
         });
+
+        // Fungsi membuat "boneka" player lain (Warna Merah)
+        function createOtherPlayerModel() {
+            const group = new THREE.Group();
+            const bodyMat = new THREE.MeshStandardMaterial({ color: 0xff4444 });
+            const headMat = new THREE.MeshStandardMaterial({ color: 0xffccaa });
+            
+            const b = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.75, 0.25), bodyMat);
+            b.position.y = 1.125;
+            const h = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), headMat);
+            h.position.y = 1.75;
+            
+            group.add(b, h);
+            return group;
+        }
 
         // ==========================================
         // 0. LOGIKA WAKTU IN-GAME
@@ -704,6 +746,16 @@
             renderer.render(scene, camera);
         }
         
+        // --- LOOP PENGIRIMAN POSISI KE SERVER (MMO LOGIC) ---
+        setInterval(() => {
+            if (socket.connected) {
+                socket.emit('move', {
+                    position: { x: player.position.x, y: player.position.y, z: player.position.z },
+                    rotation: { y: player.rotation.y }
+                });
+            }
+        }, 50); 
+
         animate();
 
         window.addEventListener('resize', () => {
