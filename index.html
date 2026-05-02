@@ -22,7 +22,7 @@
         }
         #jump-btn:active { background: rgba(255, 255, 255, 0.6); transform: scale(0.95); }
 
-        /* --- UI TIDUR --- */
+        /* --- UI SMART ACTION (TIDUR / NAIK) --- */
         #action-btn {
             position: absolute; bottom: 150px; right: 40px; padding: 15px 25px; border-radius: 30px;
             background: rgba(255, 215, 0, 0.8); border: 2px solid white; color: black; font-weight: bold; font-size: 16px;
@@ -47,10 +47,10 @@
 <body>
     <div id="info">
         <h1 style="margin:0; font-size: 24px;">Khoirony Arief - Mini World</h1>
-        <div class="controls-hint"><b>Mouse:</b> Putar Kamera | <b>W A S D:</b> Berjalan | <b>Spasi:</b> Lompat</div>
+        <div class="controls-hint"><b>WASD:</b> Jalan | <b>Spasi:</b> Lompat | <b>Dekati Hewan/Kasur</b> untuk Aksi</div>
     </div>
 
-    <div id="action-btn">💤 Tidur</div>
+    <div id="action-btn">Aksi</div>
     <div id="fade-overlay"></div>
 
     <div id="mobile-ui">
@@ -101,13 +101,13 @@
         scene.add(dirLight);
 
         // ==========================================
-        // 2. SISTEM FISIKA & OBYEK INTERAKTIF
+        // 2. SISTEM FISIKA & ARRAY PENYIMPAN
         // ==========================================
         const solidGrounds = []; 
         const wallObjects = [];  
         const interactiveHouses = [];
         const npcs = []; 
-        const beds = []; // Array Penyimpan Ranjang
+        const beds = []; 
 
         function addWall(mesh) { 
             mesh.updateMatrixWorld(true);
@@ -136,7 +136,6 @@
             const wallL = new THREE.Mesh(new THREE.BoxGeometry(thickness, height, depth), wallMat); wallL.position.set(-width/2 + thickness/2, height/2, 0);
             const wallR = new THREE.Mesh(new THREE.BoxGeometry(thickness, height, depth), wallMat); wallR.position.set(width/2 - thickness/2, height/2, 0);
             const wallB = new THREE.Mesh(new THREE.BoxGeometry(width, height, thickness), wallMat); wallB.position.set(0, height/2, -depth/2 + thickness/2);
-            
             const wallFL = new THREE.Mesh(new THREE.BoxGeometry((width - 2.5)/2, height, thickness), wallMat); wallFL.position.set(-2.625, height/2, depth/2 - thickness/2);
             const wallFR = new THREE.Mesh(new THREE.BoxGeometry((width - 2.5)/2, height, thickness), wallMat); wallFR.position.set(2.625, height/2, depth/2 - thickness/2);
             const wallFTop = new THREE.Mesh(new THREE.BoxGeometry(2.5, 1, thickness), wallMat); wallFTop.position.set(0, 3.5, depth/2 - thickness/2);
@@ -147,7 +146,6 @@
             const roof = new THREE.Mesh(new THREE.ConeGeometry(7, 3, 4), new THREE.MeshStandardMaterial({ color: 0x8b0000 }));
             roof.position.set(0, height + 1.5, 0); roof.rotation.y = Math.PI / 4; roof.castShadow = true; group.add(roof);
 
-            // Bantal Kasur (Penanda Kasur/Zona interaksi)
             const bedMat = new THREE.MeshStandardMaterial({ color: 0x1e3a8a });
             const bed = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.6, 4), bedMat);
             bed.position.set(-2, 0.4, -1.5); bed.castShadow = true; group.add(bed);
@@ -166,15 +164,13 @@
             const triggerBox = new THREE.Box3().setFromObject(floor); triggerBox.max.y += 5;
             interactiveHouses.push({ box: triggerBox, roof: roof });
 
-            // Simpan posisi kasur untuk fitur interaksi tidur
             bed.updateMatrixWorld(true);
             const bedTrigger = new THREE.Box3().setFromObject(bed);
-            bedTrigger.expandByScalar(1.5); // Zona aktif (area klik kasur)
+            bedTrigger.expandByScalar(1.5); 
             
-            // Simpan orientasi dan posisi untuk animasi tidur (Tengah-tengah kasur)
             const bedCenter = new THREE.Vector3();
             bed.getWorldPosition(bedCenter);
-            bedCenter.y += 0.8; // Di atas kasur sedikit
+            bedCenter.y += 0.8; 
             beds.push({ triggerBox: bedTrigger, sleepPosition: bedCenter, sleepRotY: rotY + Math.PI/2 });
         }
 
@@ -200,7 +196,6 @@
         function createLake(x, z, radius) {
             const water = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 0.5, 32), new THREE.MeshStandardMaterial({ color: 0x1E90FF, transparent: true, opacity: 0.8 }));
             water.position.set(x, -0.5, z); scene.add(water); solidGrounds.push(water);
-
             const sand = new THREE.Mesh(new THREE.TorusGeometry(radius + 1, 1, 8, 32), new THREE.MeshStandardMaterial({ color: 0xEEDC82 }));
             sand.position.set(x, -0.2, z); sand.rotation.x = Math.PI / 2;
             scene.add(sand); solidGrounds.push(sand);
@@ -235,7 +230,7 @@
             
             npcs.push({
                 mesh: pig, legs: [legFL, legFR, legBL, legBR],
-                state: 'idle', timer: Math.random() * 2, moveTime: 0, velocityY: 0, speed: 0.02 + Math.random() * 0.02, direction: pig.rotation.y
+                state: 'idle', timer: Math.random() * 2, moveTime: 0, velocityY: 0, speed: 0.03 + Math.random() * 0.02, direction: pig.rotation.y
             });
         }
 
@@ -264,12 +259,13 @@
             const woodMat = new THREE.MeshStandardMaterial({ color: 0xdeb887 });
             const board = new THREE.Mesh(new THREE.BoxGeometry(4.4, 2.4, 0.1), [woodMat, woodMat, woodMat, woodMat, new THREE.MeshStandardMaterial({ map: texture }), woodMat]);
             board.position.set(0, 2.2, 0.15); board.castShadow = true;
+            
             group.add(board); group.position.set(x, 0, z); group.rotation.y = rotY; scene.add(group); 
             group.updateMatrixWorld(true); addWall(group); solidGrounds.push(board, roof); 
         }
 
         // ==========================================
-        // 5. MENYUSUN MAP (LOKASI DISEBAR)
+        // 4. PENYUSUNAN DUNIA
         // ==========================================
         createMading("✨ ABOUT ME ✨", ["👋 Hi! I am Khoirony Arief", "💻 Software Engineer based in Bandung.", "🏢 Working at Far Capital (Property Tech).", "🚀 Fast Learner & Problem Solver."], 0, -10, 0);
         createHollowHouse(-25, -15, Math.PI / 4);  
@@ -292,9 +288,11 @@
         }
 
         // ==========================================
-        // 6. KARAKTER PEMAIN & FISIKA
+        // 5. KARAKTER PEMAIN & KONTROL
         // ==========================================
-        const player = new THREE.Group(); scene.add(player); player.position.set(0, 5, 5);
+        const player = new THREE.Group(); scene.add(player); 
+        player.position.set(0, 5, 5);
+        player.rotation.order = 'YXZ'; 
 
         function createLimb(w, h, d, color, yPivot) {
             const group = new THREE.Group(); const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({ color: color }));
@@ -312,7 +310,7 @@
         controls.enableDamping = true; controls.maxPolarAngle = Math.PI / 2.1; controls.minDistance = 2; controls.maxDistance = 20;
 
         let velocityY = 0; const gravity = -0.02; let isJumping = false;
-        const speed = 0.25; let moveTime = 0; const playerBox = new THREE.Box3();
+        let moveTime = 0; const playerBox = new THREE.Box3();
         const raycaster = new THREE.Raycaster(); 
 
         const keys = { w: false, a: false, s: false, d: false, ' ': false };
@@ -330,73 +328,87 @@
         jumpBtn.addEventListener('mousedown', triggerJump);
 
         // ==========================================
-        // 7. SISTEM TIDUR (SLEEP MECHANIC)
+        // 6. SISTEM SMART ACTION (TIDUR & RIDING)
         // ==========================================
         const actionBtn = document.getElementById('action-btn');
         const fadeOverlay = document.getElementById('fade-overlay');
+        
         let activeBed = null;
+        let activePig = null;
+        
         let isSleeping = false;
         let previousPlayerPos = new THREE.Vector3();
         let previousPlayerRot = new THREE.Euler();
 
+        let isRiding = false;
+        let mountedPig = null;
+
         actionBtn.addEventListener('click', () => {
+            // JIKA SEDANG NAIK HEWAN -> TURUN
+            if (isRiding) {
+                isRiding = false;
+                mountedPig.state = 'idle'; // Kembalikan ke AI
+                mountedPig = null;
+                player.position.x += 1; // Geser sedikit agar tidak menyangkut di badan babi
+                player.position.y += 0.5;
+                actionBtn.style.display = 'none';
+                return;
+            }
+
+            // JIKA DEKAT KASUR -> TIDUR
             if(!isSleeping && activeBed) {
-                // MULAI TIDUR
                 isSleeping = true;
                 actionBtn.style.display = 'none';
-                
-                // Simpan posisi lama untuk bangun nanti
                 previousPlayerPos.copy(player.position);
                 previousPlayerRot.copy(player.rotation);
 
-                // Taruh pemain di kasur dan rebahkan (rotasi X 90 derajat)
                 player.position.copy(activeBed.sleepPosition);
                 player.rotation.set(-Math.PI / 2, 0, activeBed.sleepRotY);
-                
-                // Matikan gravitasi sementara
                 velocityY = 0;
 
-                // Animasi Fade to Black
                 fadeOverlay.style.opacity = 1;
-                
                 setTimeout(() => {
-                    // Ganti waktu (Siang/Malam)
                     isDay = !isDay;
                     if(isDay) {
-                        scene.background = new THREE.Color(0x87CEEB);
-                        scene.fog.color.setHex(0x87CEEB);
-                        dirLight.intensity = 1.0;
-                        ambientLight.intensity = 0.5;
-                        document.body.style.background = '#87CEEB';
+                        scene.background = new THREE.Color(0x87CEEB); scene.fog.color.setHex(0x87CEEB);
+                        dirLight.intensity = 1.0; ambientLight.intensity = 0.5; document.body.style.background = '#87CEEB';
                     } else {
-                        scene.background = new THREE.Color(0x05051a); // Malam Gelap
-                        scene.fog.color.setHex(0x05051a);
-                        dirLight.intensity = 0.1; // Lampu bulan redup
-                        ambientLight.intensity = 0.1;
-                        document.body.style.background = '#05051a';
+                        scene.background = new THREE.Color(0x05051a); scene.fog.color.setHex(0x05051a);
+                        dirLight.intensity = 0.1; ambientLight.intensity = 0.1; document.body.style.background = '#05051a';
                     }
-                    
-                    // Fade In (Bangun)
                     setTimeout(() => {
                         fadeOverlay.style.opacity = 0;
-                        // Kembalikan ke posisi semula di samping kasur
                         player.position.copy(previousPlayerPos);
                         player.rotation.copy(previousPlayerRot);
                         isSleeping = false;
                     }, 1500);
+                }, 1500);
+                return;
+            }
 
-                }, 1500); // Tunggu layar hitam 1.5 detik
+            // JIKA DEKAT HEWAN -> NAIK
+            if(!isSleeping && activePig) {
+                isRiding = true;
+                mountedPig = activePig;
+                mountedPig.state = 'ridden'; // Matikan AI Hewan saat dinaiki
+                return;
             }
         });
 
         // ==========================================
-        // 8. GAME LOOP UTAMA
+        // 7. GAME LOOP UTAMA
         // ==========================================
         function animate() {
             requestAnimationFrame(animate);
 
+            // Tentukan Kecepatan: Jalan biasa 0.25, Naik Babi ngebut 0.45!
+            const currentSpeed = isRiding ? 0.45 : 0.25;
+
             // --- A. LOGIKA AI NPC HEWAN ---
             npcs.forEach(npc => {
+                // Lewati AI jika babi sedang ditunggangi pemain
+                if (npc.state === 'ridden') return;
+
                 npc.timer -= 0.016; 
                 if (npc.timer <= 0) {
                     npc.state = Math.random() > 0.5 ? 'walking' : 'idle';
@@ -428,7 +440,7 @@
                 }
             });
 
-            // --- B. LOGIKA ATAP TRANSPARAN & ZONA TIDUR ---
+            // --- B. LOGIKA ATAP TRANSPARAN (Rumah) ---
             let isInsideHouse = false;
             for (let house of interactiveHouses) {
                 if (house.box.containsPoint(player.position)) {
@@ -437,31 +449,66 @@
                     house.roof.visible = true; 
                 }
             }
-
             if (isInsideHouse) controls.maxDistance = 5; else controls.maxDistance = 20;
 
-            // Cek apakah pemain dekat kasur
+            // --- C. DETEKSI AKSI PINTAR (TIDUR ATAU NAIK HEWAN) ---
             if (!isSleeping) {
                 activeBed = null;
-                for (let bed of beds) {
-                    if (bed.triggerBox.containsPoint(player.position)) {
-                        activeBed = bed;
-                        break;
+                activePig = null;
+
+                if (isRiding) {
+                    actionBtn.style.display = 'block';
+                    actionBtn.innerHTML = '🚶 Turun';
+                } else {
+                    // Cari kasur terdekat
+                    for (let bed of beds) {
+                        if (bed.triggerBox.containsPoint(player.position)) {
+                            activeBed = bed; break;
+                        }
+                    }
+                    
+                    // Jika tidak ada kasur, cari babi terdekat
+                    if (!activeBed) {
+                        for (let npc of npcs) {
+                            if (player.position.distanceTo(npc.mesh.position) < 3.0) {
+                                activePig = npc; break;
+                            }
+                        }
+                    }
+
+                    // Tampilkan UI Sesuai Jarak
+                    if (activeBed) {
+                        actionBtn.style.display = 'block'; actionBtn.innerHTML = '💤 Tidur';
+                    } else if (activePig) {
+                        actionBtn.style.display = 'block'; actionBtn.innerHTML = '🐎 Naik';
+                    } else {
+                        actionBtn.style.display = 'none';
                     }
                 }
-                actionBtn.style.display = activeBed ? 'block' : 'none';
             }
 
-            // --- C. FISIKA PEMAIN & TABRAKAN ---
+            // --- D. FISIKA PEMAIN & NAIK HEWAN ---
             if (!isSleeping) {
                 let currentGroundY = -5;
                 raycaster.set(new THREE.Vector3(player.position.x, player.position.y + 1, player.position.z), new THREE.Vector3(0, -1, 0));
                 let intersects = raycaster.intersectObjects(solidGrounds, false);
                 if (intersects.length > 0) currentGroundY = intersects[0].point.y;
 
-                velocityY += gravity; player.position.y += velocityY;
-                if (player.position.y <= currentGroundY) { player.position.y = currentGroundY; velocityY = 0; isJumping = false; }
-                if (keys[' '] && !isJumping) { velocityY = 0.3; isJumping = true; }
+                // Jika sedang naik hewan, karakter berada 1 meter di atas tanah!
+                let targetY = isRiding ? currentGroundY + 1.0 : currentGroundY;
+
+                velocityY += gravity; 
+                player.position.y += velocityY;
+                if (player.position.y <= targetY) { 
+                    player.position.y = targetY; 
+                    velocityY = 0; 
+                    isJumping = false; 
+                }
+                
+                if (keys[' '] && !isJumping) { 
+                    velocityY = 0.35; 
+                    isJumping = true; 
+                }
 
                 const camForward = new THREE.Vector3(); camera.getWorldDirection(camForward);
                 camForward.y = 0; camForward.normalize();
@@ -477,7 +524,7 @@
                 if (moveDir.lengthSq() > 1) moveDir.normalize();
 
                 if (moveDir.lengthSq() > 0) {
-                    const nextPos = player.position.clone().addScaledVector(moveDir, speed);
+                    const nextPos = player.position.clone().addScaledVector(moveDir, currentSpeed);
                     let isColliding = false;
 
                     // Cek Tabrakan Dinding Statis
@@ -490,6 +537,9 @@
                     // Cek Tabrakan Dinamis (NPC)
                     if (!isColliding) {
                         for (let npc of npcs) {
+                            // Abaikan tabrakan dengan babi yang sedang kita naiki!
+                            if (npc === mountedPig) continue;
+                            
                             let npcBox = new THREE.Box3().setFromObject(npc.mesh);
                             npcBox.expandByScalar(-0.1); 
                             if (playerBox.intersectsBox(npcBox)) { 
@@ -504,15 +554,50 @@
                         player.position.z = nextPos.z;
                     }
                     
+                    player.rotation.x = 0;
                     player.lookAt(player.position.clone().add(moveDir));
-                    moveTime += (0.25 * (isJoyActive ? Math.max(Math.abs(joyX), Math.abs(joyY)) : 1)); 
-                    armL.rotation.x = Math.sin(moveTime) * 0.8; armR.rotation.x = -Math.sin(moveTime) * 0.8;
-                    legL.rotation.x = -Math.sin(moveTime) * 0.8; legR.rotation.x = Math.sin(moveTime) * 0.8;
+                    
+                    // ANIMASI SAAT BERJALAN
+                    if (isRiding) {
+                        // Pose karakter saat menunggangi hewan (Kaki agak mengangkang, tangan memegang kendali)
+                        armL.rotation.x = 0.4; armR.rotation.x = 0.4;
+                        legL.rotation.x = -0.4; legR.rotation.x = -0.4;
+                        legL.rotation.z = -0.2; legR.rotation.z = 0.2;
+                        
+                        // Animasi Lari Babi
+                        mountedPig.moveTime += 0.4; // Kaki babi bergerak cepat
+                        mountedPig.legs[0].rotation.x = Math.sin(mountedPig.moveTime) * 0.8; 
+                        mountedPig.legs[3].rotation.x = Math.sin(mountedPig.moveTime) * 0.8; 
+                        mountedPig.legs[1].rotation.x = -Math.sin(mountedPig.moveTime) * 0.8; 
+                        mountedPig.legs[2].rotation.x = -Math.sin(mountedPig.moveTime) * 0.8; 
+                    } else {
+                        // Animasi Lari Normal Pemain
+                        moveTime += (0.25 * (isJoyActive ? Math.max(Math.abs(joyX), Math.abs(joyY)) : 1)); 
+                        armL.rotation.x = Math.sin(moveTime) * 0.8; armR.rotation.x = -Math.sin(moveTime) * 0.8;
+                        legL.rotation.x = -Math.sin(moveTime) * 0.8; legR.rotation.x = Math.sin(moveTime) * 0.8;
+                        legL.rotation.z = 0; legR.rotation.z = 0;
+                    }
+
                 } else {
-                    armL.rotation.x = THREE.MathUtils.lerp(armL.rotation.x, 0, 0.1); armR.rotation.x = THREE.MathUtils.lerp(armR.rotation.x, 0, 0.1);
-                    legL.rotation.x = THREE.MathUtils.lerp(legL.rotation.x, 0, 0.1); legR.rotation.x = THREE.MathUtils.lerp(legR.rotation.x, 0, 0.1);
+                    // SAAT BERHENTI DIAM
+                    player.rotation.x = 0;
+                    if (isRiding) {
+                        armL.rotation.x = 0.4; armR.rotation.x = 0.4;
+                        legL.rotation.x = -0.4; legR.rotation.x = -0.4;
+                        mountedPig.legs.forEach(leg => leg.rotation.x = THREE.MathUtils.lerp(leg.rotation.x, 0, 0.1));
+                    } else {
+                        armL.rotation.x = THREE.MathUtils.lerp(armL.rotation.x, 0, 0.1); armR.rotation.x = THREE.MathUtils.lerp(armR.rotation.x, 0, 0.1);
+                        legL.rotation.x = THREE.MathUtils.lerp(legL.rotation.x, 0, 0.1); legR.rotation.x = THREE.MathUtils.lerp(legR.rotation.x, 0, 0.1);
+                        legL.rotation.z = 0; legR.rotation.z = 0;
+                    }
                 }
-            } // End of isSleeping check
+
+                // VISUAL BINDING (Menyatukan Babi dengan Karakter)
+                if (isRiding && mountedPig) {
+                    mountedPig.mesh.position.set(player.position.x, player.position.y - 1.0, player.position.z);
+                    mountedPig.mesh.rotation.y = player.rotation.y;
+                }
+            } // End of !isSleeping
 
             controls.target.set(player.position.x, player.position.y + 1.5, player.position.z);
             controls.update();
