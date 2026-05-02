@@ -47,6 +47,18 @@
             100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
         }
 
+        /* --- CHAT UI BARU --- */
+        #chat-container {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 400px; z-index: 1000; pointer-events: auto;
+        }
+        #chat-input {
+            width: 100%; padding: 12px 20px; border-radius: 25px; border: 2px solid rgba(255,255,255,0.5);
+            background: rgba(0,0,0,0.6); color: white; font-size: 16px; outline: none; backdrop-filter: blur(5px);
+            box-sizing: border-box;
+        }
+        #chat-input:focus { border-color: #ffd700; }
+
         #mobile-ui { position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; z-index: 99; display: none; }
         #joystick-zone { position: absolute; bottom: 30px; left: 30px; width: 120px; height: 120px; pointer-events: auto; }
         #jump-btn {
@@ -81,12 +93,14 @@
             #hud-online { top: 10px; left: 10px; padding: 8px 15px; font-size: 12px; }
             .online-dot { width: 8px; height: 8px; }
             #action-btn { bottom: 130px; right: 30px; font-size: 14px; padding: 12px 20px;}
+            /* Sesuaikan chat di mobile */
+            #chat-container { bottom: 80px; width: 70%; left: 60%; }
         }
     </style>
 </head>
 <body>
     <div id="info">
-        <div class="controls-hint"><b>WASD:</b> Jalan | <b>Spasi:</b> Lompat | <b>Dekati Hewan/Kasur</b> untuk Aksi</div>
+        <div class="controls-hint"><b>Enter:</b> Chat | <b>WASD:</b> Jalan | <b>Spasi:</b> Lompat | <b>Dekati Hewan/Kasur</b> untuk Aksi</div>
     </div>
 
     <div id="hud-online">
@@ -98,6 +112,10 @@
         <div id="hud-day">Day 1</div>
         <div id="hud-clock">08:00</div>
         <div id="hud-period">Pagi</div>
+    </div>
+
+    <div id="chat-container">
+        <input type="text" id="chat-input" placeholder="Ketik pesan..." autocomplete="off">
     </div>
 
     <div id="action-btn">Aksi</div>
@@ -124,10 +142,11 @@
         import { io } from "https://cdn.socket.io/4.7.4/socket.io.esm.min.js";
 
         // ==========================================
-        // 0. LOGIKA MULTIPLAYER (REAL-TIME)
+        // 0. LOGIKA MULTIPLAYER (REAL-TIME) & CHAT
         // ==========================================
         const onlineCountElement = document.getElementById('online-count');
         const onlineDot = document.getElementById('online-dot');
+        const chatInput = document.getElementById('chat-input');
         const socket = io("https://3dgame-api.khoirony.fun");
         
         let remotePlayers = {}; // Menyimpan mesh player lain
@@ -166,6 +185,21 @@
                     scene.remove(remotePlayers[id]);
                     delete remotePlayers[id];
                 }
+            }
+        });
+
+        // --- PENERIMA CHAT BARU ---
+        socket.on('chatUpdate', (data) => {
+            const targetPlayer = (data.id === socket.id) ? player : remotePlayers[data.id];
+            if (targetPlayer) showChatBubble(targetPlayer, data.message);
+        });
+
+        // --- PENGIRIM CHAT BARU ---
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && chatInput.value.trim() !== "") {
+                socket.emit('chatMessage', chatInput.value);
+                chatInput.value = "";
+                chatInput.blur(); // Menghilangkan fokus dari input agar bisa jalan pakai WASD lagi
             }
         });
 
@@ -214,6 +248,39 @@
             };
             
             return group;
+        }
+
+        // --- FUNGSI PEMBUAT BUBBLE CHAT BARU ---
+        function showChatBubble(targetGroup, message) {
+            if (targetGroup.userData.bubble) targetGroup.remove(targetGroup.userData.bubble);
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 512; canvas.height = 128;
+
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.roundRect(10, 10, 492, 108, 20); ctx.fill();
+            ctx.strokeStyle = 'white'; ctx.lineWidth = 4; ctx.stroke();
+
+            ctx.fillStyle = 'white'; ctx.font = 'bold 36px Arial'; ctx.textAlign = 'center';
+            ctx.fillText(message, 256, 75);
+
+            const tex = new THREE.CanvasTexture(canvas);
+            const spriteMat = new THREE.SpriteMaterial({ map: tex });
+            const sprite = new THREE.Sprite(spriteMat);
+            
+            sprite.scale.set(3, 0.75, 1);
+            sprite.position.y = 2.8; 
+            
+            targetGroup.add(sprite);
+            targetGroup.userData.bubble = sprite;
+
+            setTimeout(() => {
+                if (targetGroup.userData.bubble === sprite) {
+                    targetGroup.remove(sprite);
+                    targetGroup.userData.bubble = null;
+                }
+            }, 5000); // Teks hilang dalam 5 detik
         }
 
         // ==========================================
@@ -489,6 +556,7 @@
         const player = new THREE.Group(); scene.add(player); 
         player.position.set(0, 5, 5);
         player.rotation.order = 'YXZ'; 
+        player.userData = {}; // Persiapan untuk bubble lokal player
 
         function createLimb(w, h, d, color, yPivot) {
             const group = new THREE.Group(); const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({ color: color }));
@@ -510,8 +578,15 @@
         const raycaster = new THREE.Raycaster(); 
 
         const keys = { w: false, a: false, s: false, d: false, ' ': false };
-        window.addEventListener('keydown', (e) => { if (keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = true; });
-        window.addEventListener('keyup', (e) => { if (keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = false; });
+        window.addEventListener('keydown', (e) => { 
+            // Jangan halangi mengetik kalau sedang fokus di chat input
+            if(document.activeElement === chatInput) return;
+            if (keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = true; 
+        });
+        window.addEventListener('keyup', (e) => { 
+            if(document.activeElement === chatInput) return;
+            if (keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = false; 
+        });
 
         let joyX = 0, joyY = 0, isJoyActive = false;
         const joystickManager = nipplejs.create({ zone: document.getElementById('joystick-zone'), mode: 'static', position: { left: '50%', top: '50%' }, color: 'white' });
