@@ -62,7 +62,7 @@
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Bayangan lebih halus
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
         document.body.appendChild(renderer.domElement);
 
         scene.add(new THREE.AmbientLight(0xffffff, 0.5));
@@ -76,12 +76,17 @@
         scene.add(dirLight);
 
         // ==========================================
-        // 2. SISTEM FISIKA (Hybrid AABB + Raycaster)
+        // 2. SISTEM FISIKA (Hybrid AABB + Raycaster) & NPC
         // ==========================================
         const solidGrounds = []; 
         const wallObjects = [];  
+        const interactiveHouses = [];
+        const npcs = []; // Array Penyimpan AI Hewan
 
-        function addWall(mesh) { wallObjects.push(new THREE.Box3().setFromObject(mesh)); }
+        function addWall(mesh) { 
+            mesh.updateMatrixWorld(true);
+            wallObjects.push(new THREE.Box3().setFromObject(mesh)); 
+        }
 
         // ==========================================
         // 3. GENERATOR LINGKUNGAN ALAM & BANGUNAN
@@ -103,20 +108,43 @@
         scene.add(island);
         solidGrounds.push(island);
 
-        function createHouse(x, z, rotY = 0) {
+        function createHollowHouse(x, z, rotY = 0) {
             const group = new THREE.Group();
-            const base = new THREE.Mesh(new THREE.BoxGeometry(4, 3, 4), new THREE.MeshStandardMaterial({ color: 0xffffff }));
-            base.position.y = 1.5; base.castShadow = true; base.receiveShadow = true;
-            group.add(base); addWall(base);
+            const wallMat = new THREE.MeshStandardMaterial({ color: 0xfff8dc });
+            const width = 8, depth = 8, height = 4, thickness = 0.5;
 
-            const roof = new THREE.Mesh(new THREE.ConeGeometry(3.5, 2, 4), new THREE.MeshStandardMaterial({ color: 0xA52A2A }));
-            roof.position.y = 4; roof.rotation.y = Math.PI / 4; roof.castShadow = true;
-            group.add(roof);
+            const floor = new THREE.Mesh(new THREE.BoxGeometry(width, 0.2, depth), new THREE.MeshStandardMaterial({ color: 0x654321 }));
+            floor.position.set(0, 0.1, 0); floor.receiveShadow = true; group.add(floor);
 
-            const door = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 0.2), new THREE.MeshStandardMaterial({ color: 0x5c4033 }));
-            door.position.set(0, 1, 2); group.add(door);
-            group.position.set(x, 0, z); group.rotation.y = rotY;
-            scene.add(group); solidGrounds.push(base, roof);
+            const wallL = new THREE.Mesh(new THREE.BoxGeometry(thickness, height, depth), wallMat); wallL.position.set(-width/2 + thickness/2, height/2, 0);
+            const wallR = new THREE.Mesh(new THREE.BoxGeometry(thickness, height, depth), wallMat); wallR.position.set(width/2 - thickness/2, height/2, 0);
+            const wallB = new THREE.Mesh(new THREE.BoxGeometry(width, height, thickness), wallMat); wallB.position.set(0, height/2, -depth/2 + thickness/2);
+            
+            const wallFL = new THREE.Mesh(new THREE.BoxGeometry((width - 2.5)/2, height, thickness), wallMat); wallFL.position.set(-2.625, height/2, depth/2 - thickness/2);
+            const wallFR = new THREE.Mesh(new THREE.BoxGeometry((width - 2.5)/2, height, thickness), wallMat); wallFR.position.set(2.625, height/2, depth/2 - thickness/2);
+            const wallFTop = new THREE.Mesh(new THREE.BoxGeometry(2.5, 1, thickness), wallMat); wallFTop.position.set(0, 3.5, depth/2 - thickness/2);
+
+            const walls = [wallL, wallR, wallB, wallFL, wallFR, wallFTop];
+            walls.forEach(w => { w.castShadow = true; w.receiveShadow = true; group.add(w); });
+
+            const roof = new THREE.Mesh(new THREE.ConeGeometry(7, 3, 4), new THREE.MeshStandardMaterial({ color: 0x8b0000 }));
+            roof.position.set(0, height + 1.5, 0); roof.rotation.y = Math.PI / 4; roof.castShadow = true; group.add(roof);
+
+            const bed = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.6, 4), new THREE.MeshStandardMaterial({ color: 0x1e3a8a }));
+            bed.position.set(-2, 0.4, -1.5); bed.castShadow = true; group.add(bed);
+
+            const table = new THREE.Mesh(new THREE.BoxGeometry(2, 1, 2), new THREE.MeshStandardMaterial({ color: 0x5c4033 }));
+            table.position.set(2, 0.6, -2); table.castShadow = true; group.add(table);
+
+            const indoorLight = new THREE.PointLight(0xffaa55, 1, 15); indoorLight.position.set(0, 3, 0); group.add(indoorLight);
+
+            group.position.set(x, 0, z); group.rotation.y = rotY; scene.add(group);
+
+            group.updateMatrixWorld(true);
+            walls.forEach(w => addWall(w)); addWall(bed); addWall(table); solidGrounds.push(floor);
+
+            const triggerBox = new THREE.Box3().setFromObject(floor); triggerBox.max.y += 5;
+            interactiveHouses.push({ box: triggerBox, roof: roof });
         }
 
         function createTent(x, z, rotY = 0) {
@@ -149,17 +177,51 @@
 
         function createTree(x, z) {
             const trunk = new THREE.Mesh(new THREE.BoxGeometry(1, 3, 1), new THREE.MeshStandardMaterial({ color: 0x8B4513 }));
-            trunk.position.set(x, 1.5, z); trunk.castShadow = true; scene.add(trunk); addWall(trunk);
+            trunk.position.set(x, 1.5, z); trunk.castShadow = true; scene.add(trunk); 
+            trunk.updateMatrixWorld(true); addWall(trunk);
             const leaves = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshStandardMaterial({ color: 0x228B22 }));
-            leaves.position.set(x, 4, z); leaves.castShadow = true; scene.add(leaves); solidGrounds.push(leaves);
+            leaves.position.set(x, 4, z); leaves.castShadow = true; scene.add(leaves);
         }
 
+        // --- SISTEM HEWAN NPC BARU ---
         function createPig(x, z) {
-            const pig = new THREE.Group(); const mat = new THREE.MeshStandardMaterial({ color: 0xFFB6C1 });
-            const body = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 1.2), mat); body.position.y = 0.6; body.castShadow = true;
-            const head = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), mat); head.position.set(0, 1, 0.6); head.castShadow = true;
-            pig.add(body, head); pig.position.set(x, 0, z); pig.rotation.y = Math.random() * Math.PI;
-            scene.add(pig); addWall(pig);
+            const pig = new THREE.Group(); 
+            const mat = new THREE.MeshStandardMaterial({ color: 0xFFB6C1 });
+            
+            // Badan & Kepala
+            const body = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 1.2), mat); 
+            body.position.y = 0.6; body.castShadow = true;
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), mat); 
+            head.position.set(0, 1, 0.6); head.castShadow = true;
+            pig.add(body, head); 
+            
+            // Keempat Kaki (Agar bisa dianimasikan)
+            function createLeg(lx, lz) {
+                const legGroup = new THREE.Group();
+                const leg = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.4, 0.2), mat);
+                leg.position.y = -0.2; leg.castShadow = true;
+                legGroup.add(leg); legGroup.position.set(lx, 0.4, lz);
+                return legGroup;
+            }
+            const legFL = createLeg(0.25, 0.4); const legFR = createLeg(-0.25, 0.4);
+            const legBL = createLeg(0.25, -0.4); const legBR = createLeg(-0.25, -0.4);
+            pig.add(legFL, legFR, legBL, legBR);
+            
+            pig.position.set(x, 0, z); 
+            pig.rotation.y = Math.random() * Math.PI * 2;
+            scene.add(pig); 
+            
+            // Daftarkan ke Otak AI
+            npcs.push({
+                mesh: pig, 
+                legs: [legFL, legFR, legBL, legBR],
+                state: 'idle', 
+                timer: Math.random() * 2, 
+                moveTime: 0,
+                velocityY: 0, 
+                speed: 0.02 + Math.random() * 0.02,
+                direction: pig.rotation.y
+            });
         }
 
         // ==========================================
@@ -167,95 +229,57 @@
         // ==========================================
         function createMading(title, lines, x, z, rotY = 0) {
             const group = new THREE.Group();
-            const poleMat = new THREE.MeshStandardMaterial({ color: 0x3d2314 }); // Coklat sangat gelap
+            const poleMat = new THREE.MeshStandardMaterial({ color: 0x3d2314 }); 
             
-            // Tiang Kiri & Kanan
             const poleL = new THREE.Mesh(new THREE.BoxGeometry(0.4, 4, 0.4), poleMat); 
             poleL.position.set(-2.2, 2, 0); poleL.castShadow = true;
             const poleR = new THREE.Mesh(new THREE.BoxGeometry(0.4, 4, 0.4), poleMat); 
             poleR.position.set(2.2, 2, 0); poleR.castShadow = true;
             group.add(poleL, poleR);
 
-            // Atap Mading (Agar terlihat seperti pos pengumuman)
             const roofGeo = new THREE.BoxGeometry(5.4, 0.3, 1.2);
             const roofMat = new THREE.MeshStandardMaterial({ color: 0x2b170b });
             const roof = new THREE.Mesh(roofGeo, roofMat);
-            roof.position.set(0, 4.1, 0.1);
-            roof.rotation.x = Math.PI / 16; // Agak miring ke depan
-            roof.castShadow = true;
+            roof.position.set(0, 4.1, 0.1); roof.rotation.x = Math.PI / 16; roof.castShadow = true;
             group.add(roof);
 
-            // Lampu Penerang (PointLight) agar mading terlihat mencolok dari jauh
             const light = new THREE.PointLight(0xffddaa, 1.5, 15);
             light.position.set(0, 3.5, 2);
             group.add(light);
 
-            // --- CANVAS TEXTURE ---
             const canvas = document.createElement('canvas'); 
             canvas.width = 1024; canvas.height = 512;
             const ctx = canvas.getContext('2d');
             
-            // Gradasi Latar Belakang Kertas
             const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-            gradient.addColorStop(0, '#ffffff');
-            gradient.addColorStop(1, '#fef3c7');
-            ctx.fillStyle = gradient; 
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Border Papan Dalam
-            ctx.strokeStyle = '#b45309'; ctx.lineWidth = 15; 
-            ctx.strokeRect(0, 0, canvas.width, canvas.height);
+            gradient.addColorStop(0, '#ffffff'); gradient.addColorStop(1, '#fef3c7');
+            ctx.fillStyle = gradient; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = '#b45309'; ctx.lineWidth = 15; ctx.strokeRect(0, 0, canvas.width, canvas.height);
 
-            // Paku Payung Merah di 4 Sudut
             ctx.fillStyle = '#dc2626';
-            [[35,35], [989,35], [35,477], [989,477]].forEach(pos => {
-                ctx.beginPath(); ctx.arc(pos[0], pos[1], 10, 0, Math.PI * 2); ctx.fill();
-            });
+            [[35,35], [989,35], [35,477], [989,477]].forEach(pos => { ctx.beginPath(); ctx.arc(pos[0], pos[1], 10, 0, Math.PI * 2); ctx.fill(); });
 
-            // Judul Mading
-            ctx.fillStyle = '#991b1b'; // Merah Gelap
-            ctx.font = '900 55px "Segoe UI", Arial, sans-serif'; 
-            ctx.textAlign = 'center'; 
-            ctx.fillText(title, canvas.width / 2, 85);
+            ctx.fillStyle = '#991b1b'; ctx.font = '900 55px "Segoe UI", Arial, sans-serif'; ctx.textAlign = 'center'; ctx.fillText(title, canvas.width / 2, 85);
+            ctx.beginPath(); ctx.moveTo(250, 110); ctx.lineTo(774, 110); ctx.lineWidth = 4; ctx.strokeStyle = '#d97706'; ctx.stroke();
             
-            // Garis pembatas judul
-            ctx.beginPath(); ctx.moveTo(250, 110); ctx.lineTo(774, 110); 
-            ctx.lineWidth = 4; ctx.strokeStyle = '#d97706'; ctx.stroke();
-            
-            // Isi Mading
-            ctx.fillStyle = '#1e293b'; // Slate-800
-            ctx.font = 'bold 34px "Segoe UI", Arial, sans-serif';
-            ctx.textAlign = 'left';
-            let startY = 180; 
-            lines.forEach(l => { 
-                ctx.fillText(l, 80, startY); 
-                startY += 60; // Jarak antar baris diperlebar
-            });
+            ctx.fillStyle = '#1e293b'; ctx.font = 'bold 34px "Segoe UI", Arial, sans-serif'; ctx.textAlign = 'left';
+            let startY = 180; lines.forEach(l => { ctx.fillText(l, 80, startY); startY += 60; });
 
-            const texture = new THREE.CanvasTexture(canvas); 
-            texture.needsUpdate = true;
-            texture.colorSpace = THREE.SRGBColorSpace; // Agar warna lebih tajam
-            
+            const texture = new THREE.CanvasTexture(canvas); texture.needsUpdate = true; texture.colorSpace = THREE.SRGBColorSpace; 
             const woodMat = new THREE.MeshStandardMaterial({ color: 0xdeb887 });
             const textMat = new THREE.MeshStandardMaterial({ map: texture });
             const board = new THREE.Mesh(new THREE.BoxGeometry(4.4, 2.4, 0.1), [woodMat, woodMat, woodMat, woodMat, textMat, woodMat]);
-            board.position.set(0, 2.2, 0.15); 
-            board.castShadow = true;
+            board.position.set(0, 2.2, 0.15); board.castShadow = true;
             
-            group.add(board); 
-            group.position.set(x, 0, z); 
-            group.rotation.y = rotY;
-            scene.add(group); 
-            
-            addWall(group); // Tembok tabrakan
-            solidGrounds.push(board, roof); // Bisa dilompati
+            group.add(board); group.position.set(x, 0, z); group.rotation.y = rotY; scene.add(group); 
+            group.updateMatrixWorld(true); addWall(group); 
+            solidGrounds.push(board, roof); 
         }
 
         // ==========================================
         // 5. MENYUSUN MAP (LOKASI DISEBAR)
         // ==========================================
         
-        // 1. AREA SPAWN UTAMA
         createMading("✨ ABOUT ME ✨", [
             "👋 Hi! I am Khoirony Arief",
             "💻 Software Engineer based in Bandung.",
@@ -263,10 +287,9 @@
             "🚀 Fast Learner & Problem Solver."
         ], 0, -10, 0);
 
-        // 2. AREA BASECAMP (Perkampungan Kiri)
-        createHouse(-20, -15, Math.PI / 4);
-        createHouse(-30, -5, Math.PI / 2);
-        createTent(-25, -25, 0);
+        createHollowHouse(-25, -15, Math.PI / 4);  
+        createHollowHouse(-15, -25, -Math.PI / 6); 
+        createTent(-35, -5, 0);
         createMading("🛠️ TECH SKILLS", [
             "⚡ TALL Stack: Tailwind, AlpineJS, Laravel, Livewire",
             "🧩 No-Code: Bubble.io, Make, n8n",
@@ -274,7 +297,6 @@
             "🎮 Game Dev: Unity, C#, 3D Math"
         ], -20, -5, Math.PI / 3);
 
-        // 3. AREA DANAU (Kanan)
         createLake(35, 10, 15);
         createTent(45, 20, -Math.PI/4);
         createMading("🏢 WORK EXPERIENCE", [
@@ -286,10 +308,10 @@
             "   Marine Fuel Monitoring System Dashboard."
         ], 25, 5, -Math.PI / 4);
 
-        // 4. AREA PEGUNUNGAN (Belakang/Utara)
         createMountain(0, -80);
-        createHill(-15, -45, 1.5);
+        createMountain(80, -40);
         createHill(15, -45, 1.5);
+        createHill(-30, 20, 2);
         createMading("🏆 WEEKEND PROJECTS", [
             "1️⃣ Personal Profile Game (WebGL / Unity)",
             "    Interactive 3D Portfolio Experience.",
@@ -302,19 +324,20 @@
         // Hutan Random
         for (let i = 0; i < 100; i++) {
             let x = (Math.random() - 0.5) * 250; let z = (Math.random() - 0.5) * 250;
-            // Jauhkan pohon dari Mading dan Area Kosong
             if (Math.sqrt(x*x + z*z) > 15 && (x > -15 || x < -35) && (x < 20 || x > 50)) createTree(x, z);
         }
-        for (let i = 0; i < 20; i++) {
-            let x = (Math.random() - 0.5) * 100; let z = (Math.random() - 0.5) * 100;
-            if (Math.sqrt(x*x + z*z) > 15) createPig(x, z);
+        
+        // MENYEBAR HEWAN NPC
+        for (let i = 0; i < 25; i++) {
+            let x = (Math.random() - 0.5) * 150; let z = (Math.random() - 0.5) * 150;
+            if (Math.sqrt(x*x + z*z) > 10) createPig(x, z);
         }
 
         // ==========================================
-        // 6. KARAKTER PEMAIN & FISIKA BARU
+        // 6. KARAKTER PEMAIN & FISIKA
         // ==========================================
         const player = new THREE.Group(); scene.add(player); 
-        player.position.set(0, 5, 5); // Spawn Point
+        player.position.set(0, 5, 5);
 
         function createLimb(w, h, d, color, yPivot) {
             const group = new THREE.Group(); const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({ color: color }));
@@ -332,8 +355,7 @@
         controls.enableDamping = true; controls.maxPolarAngle = Math.PI / 2.1; controls.minDistance = 2; controls.maxDistance = 20;
 
         let velocityY = 0; const gravity = -0.02; let isJumping = false;
-        const speed = 0.25; // Kecepatan jalan dinaikkan agar seru menjelajah
-        let moveTime = 0; const playerBox = new THREE.Box3();
+        const speed = 0.25; let moveTime = 0; const playerBox = new THREE.Box3();
         const raycaster = new THREE.Raycaster(); 
 
         const keys = { w: false, a: false, s: false, d: false, ' ': false };
@@ -351,11 +373,75 @@
         jumpBtn.addEventListener('mousedown', triggerJump);
 
         // ==========================================
-        // 7. GAME LOOP
+        // 7. GAME LOOP UTAMA
         // ==========================================
         function animate() {
             requestAnimationFrame(animate);
 
+            // --- A. LOGIKA AI NPC HEWAN ---
+            npcs.forEach(npc => {
+                npc.timer -= 0.016; 
+                
+                // Ubah State Acak (Jalan / Diam)
+                if (npc.timer <= 0) {
+                    npc.state = Math.random() > 0.5 ? 'walking' : 'idle';
+                    npc.timer = 1 + Math.random() * 4; // Bertahan 1-5 detik
+                    if (npc.state === 'walking') npc.direction = Math.random() * Math.PI * 2;
+                    // Kesempatan melompat
+                    if (Math.random() > 0.8 && npc.velocityY === 0) npc.velocityY = 0.2; 
+                }
+
+                // Cek Tanah untuk NPC
+                let npcGroundY = -5;
+                raycaster.set(new THREE.Vector3(npc.mesh.position.x, npc.mesh.position.y + 1, npc.mesh.position.z), new THREE.Vector3(0, -1, 0));
+                let npcIntersects = raycaster.intersectObjects(solidGrounds, false);
+                if (npcIntersects.length > 0) npcGroundY = npcIntersects[0].point.y;
+
+                // Gravitasi NPC
+                npc.velocityY += gravity; 
+                npc.mesh.position.y += npc.velocityY;
+                if (npc.mesh.position.y <= npcGroundY) { 
+                    npc.mesh.position.y = npcGroundY; 
+                    npc.velocityY = 0; 
+                }
+
+                // Eksekusi Gerak & Animasi Kaki
+                if (npc.state === 'walking') {
+                    // Berputar halus ke arah tujuan
+                    let diff = npc.direction - npc.mesh.rotation.y;
+                    diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+                    npc.mesh.rotation.y += diff * 0.05;
+                    
+                    // Maju
+                    npc.mesh.translateZ(npc.speed);
+
+                    // Animasi menyilang Kaki Depan Kiri & Kanan Belakang
+                    npc.moveTime += 0.25;
+                    npc.legs[0].rotation.x = Math.sin(npc.moveTime) * 0.5; // FL
+                    npc.legs[3].rotation.x = Math.sin(npc.moveTime) * 0.5; // BR
+                    npc.legs[1].rotation.x = -Math.sin(npc.moveTime) * 0.5; // FR
+                    npc.legs[2].rotation.x = -Math.sin(npc.moveTime) * 0.5; // BL
+                } else {
+                    // Animasi Idle (kembali lurus)
+                    npc.legs.forEach(leg => leg.rotation.x = THREE.MathUtils.lerp(leg.rotation.x, 0, 0.1));
+                }
+            });
+
+            // --- B. LOGIKA ATAP TRANSPARAN (Rumah) ---
+            let isInsideHouse = false;
+            for (let house of interactiveHouses) {
+                if (house.box.containsPoint(player.position)) {
+                    house.roof.visible = false; 
+                    isInsideHouse = true;
+                } else {
+                    house.roof.visible = true; 
+                }
+            }
+
+            if (isInsideHouse) controls.maxDistance = 5; 
+            else controls.maxDistance = 20;
+
+            // --- C. FISIKA PEMAIN & TABRAKAN ---
             let currentGroundY = -5;
             raycaster.set(new THREE.Vector3(player.position.x, player.position.y + 1, player.position.z), new THREE.Vector3(0, -1, 0));
             let intersects = raycaster.intersectObjects(solidGrounds, false);
@@ -393,8 +479,8 @@
                     if (nextIntersects[0].point.y - player.position.y > 1.2) isColliding = true;
                 }
 
-                playerBox.min.set(nextPos.x - 0.3, player.position.y, nextPos.z - 0.3);
-                playerBox.max.set(nextPos.x + 0.3, player.position.y + 1.5, nextPos.z + 0.3);
+                playerBox.min.set(nextPos.x - 0.25, player.position.y, nextPos.z - 0.25);
+                playerBox.max.set(nextPos.x + 0.25, player.position.y + 1.5, nextPos.z + 0.25);
                 for (let box of wallObjects) {
                     if (playerBox.intersectsBox(box)) { isColliding = true; break; }
                 }
