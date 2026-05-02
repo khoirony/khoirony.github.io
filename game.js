@@ -155,6 +155,26 @@ actionBtn.addEventListener('click', () => {
 });
 
 // ==========================================
+// 8. SISTEM EFEK SUARA (SFX)
+// ==========================================
+const soundBtn = document.getElementById('sound-btn');
+
+// Buat objek Audio (Ini pakai URL contoh, nanti bisa diganti URL mp3 milikmu sendiri)
+const mySound = new Audio('hidup-jokowi.mp3');
+// Set volume (0.0 sampai 1.0)
+mySound.volume = 0.5; 
+
+soundBtn.addEventListener('click', () => {
+    // Kembalikan waktu ke 0 agar suara bisa ditekan berkali-kali dengan cepat (spam)
+    mySound.currentTime = 0; 
+    
+    // Mainkan suara
+    mySound.play().catch(error => {
+        console.log("Browser memblokir autoplay suara:", error);
+    });
+});
+
+// ==========================================
 // 7. GAME LOOP UTAMA
 // ==========================================
 function animate() {

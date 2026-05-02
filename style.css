@@ -82,6 +82,29 @@ body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; 
     transition: opacity 1.5s ease-in-out;
 }
 
+/* --- TOMBOL SUARA --- */
+#sound-btn {
+    position: absolute; 
+    top: 80px; /* Posisinya di bawah indikator Online */
+    left: 20px; 
+    padding: 10px 20px; 
+    border-radius: 25px; 
+    background: rgba(0,0,0,0.6);
+    color: white; 
+    border: 2px solid rgba(255,255,255,0.5); 
+    font-weight: bold; 
+    font-size: 14px;
+    cursor: pointer; 
+    z-index: 1000; 
+    backdrop-filter: blur(5px); 
+    pointer-events: auto;
+    user-select: none;
+}
+#sound-btn:active {
+    transform: scale(0.95);
+    background: rgba(255,255,255,0.3);
+}
+
 @media (max-width: 800px) { 
     #mobile-ui { display: block; } 
     .controls-hint { display: none; }
@@ -108,4 +131,6 @@ body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; 
     #chat-toggle-btn {
         bottom: auto; top: 20px; padding: 8px 15px; font-size: 12px;
     }
+
+    #sound-btn { top: 50px; left: 10px; padding: 8px 15px; font-size: 12px; }
 }
