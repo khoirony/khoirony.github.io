@@ -8,7 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.1/nipplejs.min.js"></script>
 
     <style>
-        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; background: #87CEEB; touch-action: none; }
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; background: #87CEEB; touch-action: none; transition: background-color 2s ease; }
         #info { position: absolute; top: 15px; width: 100%; text-align: center; color: white; z-index: 100; pointer-events: none; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
         .controls-hint { font-size: 14px; background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 20px; display: inline-block; margin-top: 10px; border: 1px solid rgba(255,255,255,0.2);}
         
@@ -22,14 +22,36 @@
         }
         #jump-btn:active { background: rgba(255, 255, 255, 0.6); transform: scale(0.95); }
 
-        @media (max-width: 800px) { #mobile-ui { display: block; } .controls-hint { display: none; } }
+        /* --- UI TIDUR --- */
+        #action-btn {
+            position: absolute; bottom: 150px; right: 40px; padding: 15px 25px; border-radius: 30px;
+            background: rgba(255, 215, 0, 0.8); border: 2px solid white; color: black; font-weight: bold; font-size: 16px;
+            pointer-events: auto; display: none; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 101;
+            user-select: none; -webkit-tap-highlight-color: transparent;
+        }
+        #action-btn:hover { background: rgba(255, 215, 0, 1); transform: scale(1.05); }
+        
+        #fade-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: black; opacity: 0; pointer-events: none; z-index: 1000;
+            transition: opacity 1.5s ease-in-out;
+        }
+
+        @media (max-width: 800px) { 
+            #mobile-ui { display: block; } 
+            .controls-hint { display: none; }
+            #action-btn { bottom: 130px; right: 30px; font-size: 14px; padding: 12px 20px;}
+        }
     </style>
 </head>
 <body>
     <div id="info">
-        <h1 style="margin:0; font-size: 24px;">Khoirony Arief - Solid NPC World</h1>
+        <h1 style="margin:0; font-size: 24px;">Khoirony Arief - Mini World</h1>
         <div class="controls-hint"><b>Mouse:</b> Putar Kamera | <b>W A S D:</b> Berjalan | <b>Spasi:</b> Lompat</div>
     </div>
+
+    <div id="action-btn">💤 Tidur</div>
+    <div id="fade-overlay"></div>
 
     <div id="mobile-ui">
         <div id="joystick-zone"></div>
@@ -53,6 +75,7 @@
         // 1. SETUP SCENE, CAMERA, RENDERER
         // ==========================================
         const scene = new THREE.Scene();
+        let isDay = true;
         scene.background = new THREE.Color(0x87CEEB);
         scene.fog = new THREE.Fog(0x87CEEB, 30, 150);
 
@@ -65,7 +88,9 @@
         renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
         document.body.appendChild(renderer.domElement);
 
-        scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+        
         const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
         dirLight.position.set(50, 100, 50);
         dirLight.castShadow = true;
@@ -76,12 +101,13 @@
         scene.add(dirLight);
 
         // ==========================================
-        // 2. SISTEM FISIKA & NPC
+        // 2. SISTEM FISIKA & OBYEK INTERAKTIF
         // ==========================================
         const solidGrounds = []; 
         const wallObjects = [];  
         const interactiveHouses = [];
-        const npcs = []; // Array Penyimpan AI Hewan
+        const npcs = []; 
+        const beds = []; // Array Penyimpan Ranjang
 
         function addWall(mesh) { 
             mesh.updateMatrixWorld(true);
@@ -121,8 +147,13 @@
             const roof = new THREE.Mesh(new THREE.ConeGeometry(7, 3, 4), new THREE.MeshStandardMaterial({ color: 0x8b0000 }));
             roof.position.set(0, height + 1.5, 0); roof.rotation.y = Math.PI / 4; roof.castShadow = true; group.add(roof);
 
-            const bed = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.6, 4), new THREE.MeshStandardMaterial({ color: 0x1e3a8a }));
+            // Bantal Kasur (Penanda Kasur/Zona interaksi)
+            const bedMat = new THREE.MeshStandardMaterial({ color: 0x1e3a8a });
+            const bed = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.6, 4), bedMat);
             bed.position.set(-2, 0.4, -1.5); bed.castShadow = true; group.add(bed);
+
+            const pillow = new THREE.Mesh(new THREE.BoxGeometry(2, 0.2, 1), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+            pillow.position.set(-2, 0.8, -2.8); group.add(pillow);
 
             const table = new THREE.Mesh(new THREE.BoxGeometry(2, 1, 2), new THREE.MeshStandardMaterial({ color: 0x5c4033 }));
             table.position.set(2, 0.6, -2); table.castShadow = true; group.add(table);
@@ -134,6 +165,17 @@
 
             const triggerBox = new THREE.Box3().setFromObject(floor); triggerBox.max.y += 5;
             interactiveHouses.push({ box: triggerBox, roof: roof });
+
+            // Simpan posisi kasur untuk fitur interaksi tidur
+            bed.updateMatrixWorld(true);
+            const bedTrigger = new THREE.Box3().setFromObject(bed);
+            bedTrigger.expandByScalar(1.5); // Zona aktif (area klik kasur)
+            
+            // Simpan orientasi dan posisi untuk animasi tidur (Tengah-tengah kasur)
+            const bedCenter = new THREE.Vector3();
+            bed.getWorldPosition(bedCenter);
+            bedCenter.y += 0.8; // Di atas kasur sedikit
+            beds.push({ triggerBox: bedTrigger, sleepPosition: bedCenter, sleepRotY: rotY + Math.PI/2 });
         }
 
         function createTent(x, z, rotY = 0) {
@@ -197,9 +239,6 @@
             });
         }
 
-        // ==========================================
-        // 4. MADING SUPER DETAIL (PAPAN PENGUMUMAN)
-        // ==========================================
         function createMading(title, lines, x, z, rotY = 0) {
             const group = new THREE.Group();
             const poleMat = new THREE.MeshStandardMaterial({ color: 0x3d2314 }); 
@@ -286,12 +325,72 @@
         joystickManager.on('end', () => { isJoyActive = false; joyX = 0; joyY = 0; });
 
         const jumpBtn = document.getElementById('jump-btn');
-        const triggerJump = (e) => { e.preventDefault(); if (!isJumping) { velocityY = 0.3; isJumping = true; } };
+        const triggerJump = (e) => { e.preventDefault(); if (!isJumping && !isSleeping) { velocityY = 0.3; isJumping = true; } };
         jumpBtn.addEventListener('touchstart', triggerJump, { passive: false });
         jumpBtn.addEventListener('mousedown', triggerJump);
 
         // ==========================================
-        // 7. GAME LOOP UTAMA
+        // 7. SISTEM TIDUR (SLEEP MECHANIC)
+        // ==========================================
+        const actionBtn = document.getElementById('action-btn');
+        const fadeOverlay = document.getElementById('fade-overlay');
+        let activeBed = null;
+        let isSleeping = false;
+        let previousPlayerPos = new THREE.Vector3();
+        let previousPlayerRot = new THREE.Euler();
+
+        actionBtn.addEventListener('click', () => {
+            if(!isSleeping && activeBed) {
+                // MULAI TIDUR
+                isSleeping = true;
+                actionBtn.style.display = 'none';
+                
+                // Simpan posisi lama untuk bangun nanti
+                previousPlayerPos.copy(player.position);
+                previousPlayerRot.copy(player.rotation);
+
+                // Taruh pemain di kasur dan rebahkan (rotasi X 90 derajat)
+                player.position.copy(activeBed.sleepPosition);
+                player.rotation.set(-Math.PI / 2, 0, activeBed.sleepRotY);
+                
+                // Matikan gravitasi sementara
+                velocityY = 0;
+
+                // Animasi Fade to Black
+                fadeOverlay.style.opacity = 1;
+                
+                setTimeout(() => {
+                    // Ganti waktu (Siang/Malam)
+                    isDay = !isDay;
+                    if(isDay) {
+                        scene.background = new THREE.Color(0x87CEEB);
+                        scene.fog.color.setHex(0x87CEEB);
+                        dirLight.intensity = 1.0;
+                        ambientLight.intensity = 0.5;
+                        document.body.style.background = '#87CEEB';
+                    } else {
+                        scene.background = new THREE.Color(0x05051a); // Malam Gelap
+                        scene.fog.color.setHex(0x05051a);
+                        dirLight.intensity = 0.1; // Lampu bulan redup
+                        ambientLight.intensity = 0.1;
+                        document.body.style.background = '#05051a';
+                    }
+                    
+                    // Fade In (Bangun)
+                    setTimeout(() => {
+                        fadeOverlay.style.opacity = 0;
+                        // Kembalikan ke posisi semula di samping kasur
+                        player.position.copy(previousPlayerPos);
+                        player.rotation.copy(previousPlayerRot);
+                        isSleeping = false;
+                    }, 1500);
+
+                }, 1500); // Tunggu layar hitam 1.5 detik
+            }
+        });
+
+        // ==========================================
+        // 8. GAME LOOP UTAMA
         // ==========================================
         function animate() {
             requestAnimationFrame(animate);
@@ -329,7 +428,7 @@
                 }
             });
 
-            // --- B. LOGIKA ATAP TRANSPARAN (Rumah) ---
+            // --- B. LOGIKA ATAP TRANSPARAN & ZONA TIDUR ---
             let isInsideHouse = false;
             for (let house of interactiveHouses) {
                 if (house.box.containsPoint(player.position)) {
@@ -341,66 +440,79 @@
 
             if (isInsideHouse) controls.maxDistance = 5; else controls.maxDistance = 20;
 
-            // --- C. FISIKA PEMAIN & TABRAKAN ---
-            let currentGroundY = -5;
-            raycaster.set(new THREE.Vector3(player.position.x, player.position.y + 1, player.position.z), new THREE.Vector3(0, -1, 0));
-            let intersects = raycaster.intersectObjects(solidGrounds, false);
-            if (intersects.length > 0) currentGroundY = intersects[0].point.y;
-
-            velocityY += gravity; player.position.y += velocityY;
-            if (player.position.y <= currentGroundY) { player.position.y = currentGroundY; velocityY = 0; isJumping = false; }
-            if (keys[' '] && !isJumping) { velocityY = 0.3; isJumping = true; }
-
-            const camForward = new THREE.Vector3(); camera.getWorldDirection(camForward);
-            camForward.y = 0; camForward.normalize();
-            const camRight = new THREE.Vector3(-camForward.z, 0, camForward.x); 
-
-            let inputY = (keys.w ? 1 : 0) - (keys.s ? 1 : 0);
-            let inputX = (keys.d ? 1 : 0) - (keys.a ? 1 : 0);
-            if (isJoyActive) { inputY += joyY; inputX += joyX; }
-
-            const moveDir = new THREE.Vector3();
-            if (inputY !== 0) moveDir.addScaledVector(camForward, inputY);
-            if (inputX !== 0) moveDir.addScaledVector(camRight, inputX);
-            if (moveDir.lengthSq() > 1) moveDir.normalize();
-
-            if (moveDir.lengthSq() > 0) {
-                const nextPos = player.position.clone().addScaledVector(moveDir, speed);
-                let isColliding = false;
-
-                // Cek Tabrakan Dinding Statis
-                playerBox.min.set(nextPos.x - 0.25, player.position.y, nextPos.z - 0.25);
-                playerBox.max.set(nextPos.x + 0.25, player.position.y + 1.5, nextPos.z + 0.25);
-                for (let box of wallObjects) {
-                    if (playerBox.intersectsBox(box)) { isColliding = true; break; }
-                }
-
-                // Cek Tabrakan Dinamis (NPC)
-                if (!isColliding) {
-                    for (let npc of npcs) {
-                        // Ambil posisi npc dan buat kotak tabrakan sementara
-                        let npcBox = new THREE.Box3().setFromObject(npc.mesh);
-                        npcBox.expandByScalar(-0.1); // Hitbox NPC sedikit diperkecil agar tidak terlalu kaku
-                        if (playerBox.intersectsBox(npcBox)) { 
-                            isColliding = true; 
-                            break; 
-                        }
+            // Cek apakah pemain dekat kasur
+            if (!isSleeping) {
+                activeBed = null;
+                for (let bed of beds) {
+                    if (bed.triggerBox.containsPoint(player.position)) {
+                        activeBed = bed;
+                        break;
                     }
                 }
-
-                if (!isColliding) {
-                    player.position.x = nextPos.x;
-                    player.position.z = nextPos.z;
-                }
-                
-                player.lookAt(player.position.clone().add(moveDir));
-                moveTime += (0.25 * (isJoyActive ? Math.max(Math.abs(joyX), Math.abs(joyY)) : 1)); 
-                armL.rotation.x = Math.sin(moveTime) * 0.8; armR.rotation.x = -Math.sin(moveTime) * 0.8;
-                legL.rotation.x = -Math.sin(moveTime) * 0.8; legR.rotation.x = Math.sin(moveTime) * 0.8;
-            } else {
-                armL.rotation.x = THREE.MathUtils.lerp(armL.rotation.x, 0, 0.1); armR.rotation.x = THREE.MathUtils.lerp(armR.rotation.x, 0, 0.1);
-                legL.rotation.x = THREE.MathUtils.lerp(legL.rotation.x, 0, 0.1); legR.rotation.x = THREE.MathUtils.lerp(legR.rotation.x, 0, 0.1);
+                actionBtn.style.display = activeBed ? 'block' : 'none';
             }
+
+            // --- C. FISIKA PEMAIN & TABRAKAN ---
+            if (!isSleeping) {
+                let currentGroundY = -5;
+                raycaster.set(new THREE.Vector3(player.position.x, player.position.y + 1, player.position.z), new THREE.Vector3(0, -1, 0));
+                let intersects = raycaster.intersectObjects(solidGrounds, false);
+                if (intersects.length > 0) currentGroundY = intersects[0].point.y;
+
+                velocityY += gravity; player.position.y += velocityY;
+                if (player.position.y <= currentGroundY) { player.position.y = currentGroundY; velocityY = 0; isJumping = false; }
+                if (keys[' '] && !isJumping) { velocityY = 0.3; isJumping = true; }
+
+                const camForward = new THREE.Vector3(); camera.getWorldDirection(camForward);
+                camForward.y = 0; camForward.normalize();
+                const camRight = new THREE.Vector3(-camForward.z, 0, camForward.x); 
+
+                let inputY = (keys.w ? 1 : 0) - (keys.s ? 1 : 0);
+                let inputX = (keys.d ? 1 : 0) - (keys.a ? 1 : 0);
+                if (isJoyActive) { inputY += joyY; inputX += joyX; }
+
+                const moveDir = new THREE.Vector3();
+                if (inputY !== 0) moveDir.addScaledVector(camForward, inputY);
+                if (inputX !== 0) moveDir.addScaledVector(camRight, inputX);
+                if (moveDir.lengthSq() > 1) moveDir.normalize();
+
+                if (moveDir.lengthSq() > 0) {
+                    const nextPos = player.position.clone().addScaledVector(moveDir, speed);
+                    let isColliding = false;
+
+                    // Cek Tabrakan Dinding Statis
+                    playerBox.min.set(nextPos.x - 0.25, player.position.y, nextPos.z - 0.25);
+                    playerBox.max.set(nextPos.x + 0.25, player.position.y + 1.5, nextPos.z + 0.25);
+                    for (let box of wallObjects) {
+                        if (playerBox.intersectsBox(box)) { isColliding = true; break; }
+                    }
+
+                    // Cek Tabrakan Dinamis (NPC)
+                    if (!isColliding) {
+                        for (let npc of npcs) {
+                            let npcBox = new THREE.Box3().setFromObject(npc.mesh);
+                            npcBox.expandByScalar(-0.1); 
+                            if (playerBox.intersectsBox(npcBox)) { 
+                                isColliding = true; 
+                                break; 
+                            }
+                        }
+                    }
+
+                    if (!isColliding) {
+                        player.position.x = nextPos.x;
+                        player.position.z = nextPos.z;
+                    }
+                    
+                    player.lookAt(player.position.clone().add(moveDir));
+                    moveTime += (0.25 * (isJoyActive ? Math.max(Math.abs(joyX), Math.abs(joyY)) : 1)); 
+                    armL.rotation.x = Math.sin(moveTime) * 0.8; armR.rotation.x = -Math.sin(moveTime) * 0.8;
+                    legL.rotation.x = -Math.sin(moveTime) * 0.8; legR.rotation.x = Math.sin(moveTime) * 0.8;
+                } else {
+                    armL.rotation.x = THREE.MathUtils.lerp(armL.rotation.x, 0, 0.1); armR.rotation.x = THREE.MathUtils.lerp(armR.rotation.x, 0, 0.1);
+                    legL.rotation.x = THREE.MathUtils.lerp(legL.rotation.x, 0, 0.1); legR.rotation.x = THREE.MathUtils.lerp(legR.rotation.x, 0, 0.1);
+                }
+            } // End of isSleeping check
 
             controls.target.set(player.position.x, player.position.y + 1.5, player.position.z);
             controls.update();
