@@ -100,7 +100,7 @@
 </head>
 <body>
     <div id="info">
-        <div class="controls-hint"><b>Enter:</b> Chat | <b>WASD:</b> Jalan | <b>Spasi:</b> Lompat | <b>Dekati Hewan/Kasur</b> untuk Aksi</div>
+        <div class="controls-hint"><b>Enter:</b> Chat (Ketik "/clear" utk hapus) | <b>WASD:</b> Jalan | <b>Spasi:</b> Lompat | <b>Dekati Hewan/Kasur</b> untuk Aksi</div>
     </div>
 
     <div id="hud-online">
@@ -250,37 +250,91 @@
             return group;
         }
 
-        // --- FUNGSI PEMBUAT BUBBLE CHAT BARU ---
+        // --- FUNGSI PEMBUAT BUBBLE CHAT DINAMIS (BISA MULTI-LINE) ---
         function showChatBubble(targetGroup, message) {
-            if (targetGroup.userData.bubble) targetGroup.remove(targetGroup.userData.bubble);
+            // Hapus bubble lama terlebih dahulu jika ada
+            if (targetGroup.userData.bubble) {
+                targetGroup.remove(targetGroup.userData.bubble);
+                targetGroup.userData.bubble = null;
+            }
+
+            // Jika pesannya adalah "/clear", berhentikan eksekusi di sini sehingga bubble terhapus
+            if (message === "/clear") return;
 
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
-            canvas.width = 512; canvas.height = 128;
+            
+            // Pengaturan Font
+            const fontSize = 36;
+            ctx.font = `bold ${fontSize}px Arial`;
+            
+            // Logika Word-Wrap (Memecah kalimat panjang jadi beberapa baris)
+            const maxWidth = 400; // Lebar maksimal teks
+            const words = message.split(' ');
+            let lines = [];
+            let currentLine = '';
 
+            for (let i = 0; i < words.length; i++) {
+                const testLine = currentLine + words[i] + ' ';
+                const metrics = ctx.measureText(testLine);
+                if (metrics.width > maxWidth && i > 0) {
+                    lines.push(currentLine.trim());
+                    currentLine = words[i] + ' ';
+                } else {
+                    currentLine = testLine;
+                }
+            }
+            lines.push(currentLine.trim());
+
+            // Hitung Ukuran Dinamis
+            const lineHeight = 45;
+            const paddingTopBottom = 40;
+            const paddingLeftRight = 60;
+            
+            // Cari baris terpanjang untuk menentukan lebar kanvas
+            let longestWidth = 0;
+            for(let line of lines) {
+                const w = ctx.measureText(line).width;
+                if(w > longestWidth) longestWidth = w;
+            }
+
+            // Atur Ukuran Canvas
+            canvas.width = Math.max(256, longestWidth + paddingLeftRight);
+            canvas.height = (lines.length * lineHeight) + paddingTopBottom;
+
+            // Gambar Background Kotak
             ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-            ctx.roundRect(10, 10, 492, 108, 20); ctx.fill();
-            ctx.strokeStyle = 'white'; ctx.lineWidth = 4; ctx.stroke();
+            ctx.roundRect(10, 10, canvas.width - 20, canvas.height - 20, 20); 
+            ctx.fill();
+            ctx.strokeStyle = 'white'; 
+            ctx.lineWidth = 4; 
+            ctx.stroke();
 
-            ctx.fillStyle = 'white'; ctx.font = 'bold 36px Arial'; ctx.textAlign = 'center';
-            ctx.fillText(message, 256, 75);
+            // Atur ulang Font (karena context me-reset pengaturan saat ukuran canvas berubah)
+            ctx.fillStyle = 'white'; 
+            ctx.font = `bold ${fontSize}px Arial`; 
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // Gambar Teks per Baris
+            const startY = (canvas.height / 2) - ((lines.length - 1) * lineHeight / 2);
+            for(let i = 0; i < lines.length; i++) {
+                ctx.fillText(lines[i], canvas.width / 2, startY + (i * lineHeight));
+            }
 
             const tex = new THREE.CanvasTexture(canvas);
             const spriteMat = new THREE.SpriteMaterial({ map: tex });
             const sprite = new THREE.Sprite(spriteMat);
             
-            sprite.scale.set(3, 0.75, 1);
-            sprite.position.y = 2.8; 
+            // Sesuaikan skala 3D agar tidak gepeng atau lonjong
+            const scaleFactor = 0.006;
+            sprite.scale.set(canvas.width * scaleFactor, canvas.height * scaleFactor, 1);
+            
+            // Sesuaikan posisi Y (makin banyak baris = makin naik biar nggak nabrak kepala)
+            sprite.position.y = 2.8 + ((canvas.height - 128) * scaleFactor / 2); 
             
             targetGroup.add(sprite);
             targetGroup.userData.bubble = sprite;
-
-            setTimeout(() => {
-                if (targetGroup.userData.bubble === sprite) {
-                    targetGroup.remove(sprite);
-                    targetGroup.userData.bubble = null;
-                }
-            }, 5000); // Teks hilang dalam 5 detik
         }
 
         // ==========================================
