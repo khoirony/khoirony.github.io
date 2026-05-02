@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-// Import Socket.io Client
 import { io } from "https://cdn.socket.io/4.7.4/socket.io.esm.min.js";
 
 // ==========================================
@@ -9,6 +8,8 @@ import { io } from "https://cdn.socket.io/4.7.4/socket.io.esm.min.js";
 const onlineCountElement = document.getElementById('online-count');
 const onlineDot = document.getElementById('online-dot');
 const chatInput = document.getElementById('chat-input');
+const chatContainer = document.getElementById('chat-container');
+const chatToggleBtn = document.getElementById('chat-toggle-btn');
 const socket = io("https://3dgame-api.khoirony.fun");
 
 let remotePlayers = {}; // Menyimpan mesh player lain
@@ -23,7 +24,7 @@ socket.on('playerCountUpdate', (count) => {
     onlineCountElement.innerText = count;
 });
 
-// Sinkronisasi posisi player lain
+// Sinkronisasi posisi player lain & Cek riwayat chat
 socket.on('updatePlayers', (serverPlayers) => {
     for (let id in serverPlayers) {
         if (id === socket.id) continue; // Abaikan diri sendiri
@@ -39,6 +40,18 @@ socket.on('updatePlayers', (serverPlayers) => {
         // Update posisi & rotasi (pakai lerp agar halus)
         remotePlayers[id].position.lerp(new THREE.Vector3(pData.position.x, pData.position.y, pData.position.z), 0.2);
         remotePlayers[id].rotation.y = pData.rotation.y;
+
+        // CEK RIWAYAT CHAT (Untuk Sinkronisasi User yang Baru Masuk)
+        if (pData.lastMessage && pData.lastMessage !== "" && pData.lastMessage !== "/clear") {
+            const currentBubbleMsg = remotePlayers[id].userData.currentMessage;
+            if (currentBubbleMsg !== pData.lastMessage) {
+                showChatBubble(remotePlayers[id], pData.lastMessage);
+            }
+        } else if (pData.lastMessage === "/clear" && remotePlayers[id].userData.bubble) {
+            remotePlayers[id].remove(remotePlayers[id].userData.bubble);
+            remotePlayers[id].userData.bubble = null;
+            remotePlayers[id].userData.currentMessage = "";
+        }
     }
 
     // Hapus player yang disconnect dari layar
@@ -50,14 +63,11 @@ socket.on('updatePlayers', (serverPlayers) => {
     }
 });
 
-// --- PENERIMA CHAT BARU ---
+// --- PENERIMA CHAT ---
 socket.on('chatUpdate', (data) => {
     const targetPlayer = (data.id === socket.id) ? player : remotePlayers[data.id];
     if (targetPlayer) showChatBubble(targetPlayer, data.message);
 });
-
-const chatContainer = document.getElementById('chat-container');
-const chatToggleBtn = document.getElementById('chat-toggle-btn');
 
 // --- LOGIKA TOMBOL CHAT (TAMPILKAN) ---
 chatToggleBtn.addEventListener('click', () => {
@@ -125,10 +135,11 @@ function createOtherPlayerModel() {
     const lR = createLimb(0.25, 0.75, 0.25, colorPant, 0.75); lR.position.x = -0.125;
     group.add(lL, lR);
 
-    // SIMPAN DATA KE USERDATA UNTUK ANIMASI
+    // SIMPAN DATA KE USERDATA UNTUK ANIMASI & CHAT
     group.userData = {
         armL: aL, armR: aR, legL: lL, legR: lR,
-        moveTime: 0, lastPos: new THREE.Vector3()
+        moveTime: 0, lastPos: new THREE.Vector3(),
+        currentMessage: ""
     };
     
     return group;
@@ -141,7 +152,10 @@ function showChatBubble(targetGroup, message) {
         targetGroup.userData.bubble = null;
     }
 
-    if (message === "/clear") return;
+    if (message === "/clear") {
+        targetGroup.userData.currentMessage = ""; // Reset catatan di lokal
+        return;
+    }
 
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -202,11 +216,11 @@ function showChatBubble(targetGroup, message) {
     
     const scaleFactor = 0.006;
     sprite.scale.set(canvas.width * scaleFactor, canvas.height * scaleFactor, 1);
-    
     sprite.position.y = 2.8 + ((canvas.height - 128) * scaleFactor / 2); 
     
     targetGroup.add(sprite);
     targetGroup.userData.bubble = sprite;
+    targetGroup.userData.currentMessage = message; // Simpan teks untuk sinkronisasi user baru
 }
 
 // ==========================================
@@ -273,10 +287,13 @@ scene.add(ambientLight);
 const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
 dirLight.position.set(50, 100, 50);
 dirLight.castShadow = true;
-dirLight.shadow.camera.left = -150; dirLight.shadow.camera.right = 150;
-dirLight.shadow.camera.top = 150; dirLight.shadow.camera.bottom = -150;
+dirLight.shadow.camera.left = -150;
+dirLight.shadow.camera.right = 150;
+dirLight.shadow.camera.top = 150;
+dirLight.shadow.camera.bottom = -150;
 dirLight.shadow.camera.far = 300;
-dirLight.shadow.mapSize.width = 2048; dirLight.shadow.mapSize.height = 2048;
+dirLight.shadow.mapSize.width = 2048;
+dirLight.shadow.mapSize.height = 2048;
 scene.add(dirLight);
 
 function changeEnvironmentLight() {
