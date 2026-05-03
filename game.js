@@ -2,9 +2,8 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-// Import dari file modular kita
-import { createWorld, solidGrounds, wallObjects, interactiveHouses, npcs, beds } from './environment.js';
-// Pastikan variabel 'socket' ikut di-import dari networking.js
+// Import objek dunia, termasuk array torchLights
+import { createWorld, solidGrounds, wallObjects, interactiveHouses, npcs, beds, torchLights } from './environment.js';
 import { initNetworking, remotePlayers, socket } from './networking.js';
 
 // ==========================================
@@ -119,15 +118,29 @@ socket.on('timeUpdate', (data) => {
     else if (h >= 15 && h < 18) { period = 'Sore'; newIsDay = true; }
     else { period = 'Malam'; newIsDay = false; }
 
-    // Jika terjadi perubahan pergantian Siang/Malam (Termasuk saat di-skip)
+    // Jika terjadi perubahan pergantian Siang/Malam
     if (newIsDay !== isDay && scene) {
         isDay = newIsDay;
         if(isDay) {
+            // Pagi / Siang
             scene.background = new THREE.Color(0x87CEEB); scene.fog.color.setHex(0x87CEEB);
             dirLight.intensity = 1.0; ambientLight.intensity = 0.5; document.body.style.background = '#87CEEB';
+            
+            // Matikan Obor
+            torchLights.forEach(torch => {
+                torch.light.intensity = 0;
+                torch.fire.visible = false;
+            });
         } else {
+            // Malam
             scene.background = new THREE.Color(0x05051a); scene.fog.color.setHex(0x05051a);
             dirLight.intensity = 0.1; ambientLight.intensity = 0.1; document.body.style.background = '#05051a';
+            
+            // Nyalakan Obor
+            torchLights.forEach(torch => {
+                torch.light.intensity = 2.0; 
+                torch.fire.visible = true;
+            });
         }
     }
 
@@ -191,6 +204,14 @@ soundBtn.addEventListener('click', () => {
 // ==========================================
 function animate() {
     requestAnimationFrame(animate);
+
+    // Efek Obor Berkedip (Flicker) saat malam
+    if (!isDay) {
+        torchLights.forEach(torch => {
+            torch.light.intensity = 1.8 + Math.random() * 0.4; 
+        });
+    }
+
     const currentSpeed = isRiding ? 0.45 : 0.25;
 
     // NPC Babi Logic

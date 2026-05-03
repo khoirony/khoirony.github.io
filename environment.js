@@ -7,6 +7,7 @@ export const wallObjects = [];
 export const interactiveHouses = [];
 export const npcs = []; 
 export const beds = []; 
+export const torchLights = [];
 
 function addWall(mesh) { 
     mesh.updateMatrixWorld(true);
@@ -42,6 +43,14 @@ export function createWorld(scene) {
     createHill(scene, 15, -45, 1.5); 
     createHill(scene, -30, 20, 2);
 
+    // Penempatan Obor di tempat strategis
+    createTorch(scene, 5, 5);      
+    createTorch(scene, -5, 5);     
+    createTorch(scene, -18, -12);  
+    createTorch(scene, -12, -18);  
+    createTorch(scene, 30, 10);    
+    createTorch(scene, 0, -5);     
+
     // Pohon Acak
     for (let i = 0; i < 100; i++) {
         let x = (Math.random() - 0.5) * 250; let z = (Math.random() - 0.5) * 250;
@@ -55,7 +64,43 @@ export function createWorld(scene) {
     }
 }
 
-// === FUNGSI-FUNGSI PEMBUAT OBJEK (Diubah sedikit agar menerima parameter 'scene') ===
+// === FUNGSI-FUNGSI PEMBUAT OBJEK ===
+
+function createTorch(scene, x, z) {
+    const group = new THREE.Group();
+
+    // 1. Tiang Kayu
+    const pole = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.1, 0.1, 2, 8),
+        new THREE.MeshStandardMaterial({ color: 0x5c4033 })
+    );
+    pole.position.y = 1;
+    pole.castShadow = true;
+    group.add(pole);
+
+    // 2. Visual Api
+    const fire = new THREE.Mesh(
+        new THREE.ConeGeometry(0.2, 0.5, 8),
+        new THREE.MeshBasicMaterial({ color: 0xff8c00 })
+    );
+    fire.position.y = 2.2;
+    fire.visible = false; 
+    group.add(fire);
+
+    // 3. Cahaya Obor
+    const light = new THREE.PointLight(0xffaa00, 0, 15); 
+    light.position.y = 2.5;
+    group.add(light);
+
+    group.position.set(x, 0, z);
+    scene.add(group);
+
+    torchLights.push({ light: light, fire: fire });
+
+    pole.updateMatrixWorld(true);
+    addWall(pole);
+}
+
 function createHollowHouse(scene, x, z, rotY = 0) {
     const group = new THREE.Group();
     const wallMat = new THREE.MeshStandardMaterial({ color: 0xfff8dc });
