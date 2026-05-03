@@ -9,7 +9,9 @@ function addWall(mesh) { mesh.updateMatrixWorld(true); wallObjects.push(new THRE
 
 export function createWorld(scene) {
     const ocean = new THREE.Mesh(new THREE.PlaneGeometry(2000, 2000), new THREE.MeshStandardMaterial({ color: 0x006994, transparent: true, opacity: 0.8 }));
-    ocean.rotation.x = -Math.PI / 2; ocean.position.y = -2; scene.add(ocean); solidGrounds.push(ocean);
+    ocean.rotation.x = -Math.PI / 2; ocean.position.y = -2; scene.add(ocean); 
+    // OCEAN DIHAPUS DARI SOLID GROUNDS AGAR TIDAK BISA DIINJAK
+
     const island = new THREE.Mesh(new THREE.CylinderGeometry(150, 160, 4, 64), new THREE.MeshStandardMaterial({ color: 0x4B8B3B }));
     island.position.y = -2; island.receiveShadow = true; scene.add(island); solidGrounds.push(island);
 
@@ -60,13 +62,10 @@ export function createTreeMesh() {
     return group;
 }
 
-// PERBAIKAN BENTUK & CAHAYA OBOR
 export function createTorchMesh() {
     const group = new THREE.Group(); 
     const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 2, 8), new THREE.MeshStandardMaterial({ color: 0x5c4033 })); pole.position.y = 1; pole.castShadow = true; group.add(pole); 
-    // Api diperbesar dan warnanya kuning menyala
     const fire = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.6, 8), new THREE.MeshBasicMaterial({ color: 0xffcc00 })); fire.position.y = 2.3; fire.visible = false; group.add(fire); 
-    // Jarak cahaya (distance) diperjauh menjadi 25 meter
     const light = new THREE.PointLight(0xffaa00, 0, 25); light.position.y = 2.8; group.add(light);
     return { mesh: group, light: light, fire: fire };
 }
@@ -82,4 +81,12 @@ function createHollowHouse(scene, x, z, rotY = 0) { const group = new THREE.Grou
 function createTent(scene, x, z, rotY = 0) { const tent = new THREE.Mesh(new THREE.ConeGeometry(2.5, 3, 4), new THREE.MeshStandardMaterial({ color: 0xFF8C00 })); tent.position.set(x, 1.5, z); tent.rotation.y = rotY + Math.PI / 4; tent.castShadow = true; tent.receiveShadow = true; scene.add(tent); addWall(tent); solidGrounds.push(tent); }
 function createHill(scene, x, z, scale) { const hill = new THREE.Mesh(new THREE.SphereGeometry(10, 16, 16), new THREE.MeshStandardMaterial({ color: 0x55aa55 })); hill.position.set(x, 0, z); hill.scale.set(scale, scale * 0.4, scale); hill.receiveShadow = true; scene.add(hill); solidGrounds.push(hill); }
 function createMountain(scene, x, z) { const mtn = new THREE.Mesh(new THREE.ConeGeometry(40, 50, 8), new THREE.MeshStandardMaterial({ color: 0x696969 })); mtn.position.set(x, 25, z); mtn.castShadow = true; mtn.receiveShadow = true; scene.add(mtn); solidGrounds.push(mtn); }
-function createLake(scene, x, z, radius) { const water = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 0.5, 32), new THREE.MeshStandardMaterial({ color: 0x1E90FF, transparent: true, opacity: 0.8 })); water.position.set(x, 0.1, z); scene.add(water); solidGrounds.push(water); const sand = new THREE.Mesh(new THREE.TorusGeometry(radius + 1, 1, 8, 32), new THREE.MeshStandardMaterial({ color: 0xEEDC82 })); sand.position.set(x, 0.15, z); sand.rotation.x = Math.PI / 2; scene.add(sand); solidGrounds.push(sand); }
+
+function createLake(scene, x, z, radius) { 
+    const water = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 0.5, 32), new THREE.MeshStandardMaterial({ color: 0x1E90FF, transparent: true, opacity: 0.8 })); 
+    water.position.set(x, 0.1, z); scene.add(water); 
+    // AIR DANAU DIHAPUS DARI SOLID GROUNDS AGAR TIDAK BISA DIINJAK
+    
+    const sand = new THREE.Mesh(new THREE.TorusGeometry(radius + 1, 1, 8, 32), new THREE.MeshStandardMaterial({ color: 0xEEDC82 })); 
+    sand.position.set(x, 0.15, z); sand.rotation.x = Math.PI / 2; scene.add(sand); solidGrounds.push(sand); 
+}

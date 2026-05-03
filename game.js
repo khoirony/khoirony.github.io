@@ -100,9 +100,11 @@ function animate() {
     if (!isDay) { for(let id in localItems) { if (localItems[id].type === 'torch') localItems[id].torchData.light.intensity = 120 + Math.random() * 50; } }
     if (isFishing) { let shake = Math.sin(Date.now() * 0.01) * 0.05; armR.rotation.x = -1.2 + shake; armL.rotation.x = -1.2 + shake; legL.rotation.x = 0; legR.rotation.x = 0; }
     
-    // DETEKSI TENGGELAM
+    // === UPDATE DETEKSI TENGGELAM (Toleransi 4 Langkah) ===
     let distCenter = Math.sqrt(player.position.x * player.position.x + player.position.z * player.position.z); 
-    if (distCenter > 148 && !isDrowning && !isSleeping) {
+    let distLake = Math.sqrt((player.position.x - 35)**2 + (player.position.z - 15)**2);
+    
+    if ((distCenter > 154 || distLake < 11) && !isDrowning && !isSleeping) {
         isDrowning = true;
         fadeOverlay.style.opacity = 1; 
         actionBtn.style.display = 'none';
@@ -116,7 +118,6 @@ function animate() {
             isDrowning = false;
             fadeOverlay.style.opacity = 0; 
 
-            // === FIX ZOMBIE POSE (Reset Tangan) ===
             armL.rotation.set(0,0,0);
             armR.rotation.set(0,0,0);
 
@@ -132,7 +133,6 @@ function animate() {
     let isInsideHouse = false; for (let house of interactiveHouses) { if (house.box.containsPoint(player.position)) { house.roof.visible = false; isInsideHouse = true; } else { house.roof.visible = true; } }
     if (isInsideHouse) controls.maxDistance = 5; else controls.maxDistance = 20;
 
-    let distLake = Math.sqrt((player.position.x - 35)**2 + (player.position.z - 15)**2);
     nearWater = (distCenter > 135 && distCenter < 160) || (distLake < 18); activeShop = null;
     for (let s of shops) { if (player.position.distanceTo(s.position) < 4.0) { activeShop = s; break; } }
 
@@ -179,9 +179,7 @@ function animate() {
             } else { 
                 moveTime += (0.25 * (isJoyActive ? Math.max(Math.abs(joyX), Math.abs(joyY)) : 1)); 
                 armL.rotation.x = Math.sin(moveTime) * 0.8; armR.rotation.x = -Math.sin(moveTime) * 0.8; 
-                // === FIX ZOMBIE POSE (Reset Tangan saat jalan) ===
                 armL.rotation.z = 0; armR.rotation.z = 0; 
-
                 legL.rotation.x = -Math.sin(moveTime) * 0.8; legR.rotation.x = Math.sin(moveTime) * 0.8; legL.rotation.z = 0; legR.rotation.z = 0; 
             }
         } else if (!isFishing) {
@@ -190,9 +188,7 @@ function animate() {
                 armL.rotation.x = 0.4; armR.rotation.x = 0.4; legL.rotation.x = -0.4; legR.rotation.x = -0.4; 
             } else { 
                 armL.rotation.x = THREE.MathUtils.lerp(armL.rotation.x, 0, 0.1); armR.rotation.x = THREE.MathUtils.lerp(armR.rotation.x, 0, 0.1); 
-                // === FIX ZOMBIE POSE (Reset Tangan saat diam) ===
                 armL.rotation.z = THREE.MathUtils.lerp(armL.rotation.z, 0, 0.1); armR.rotation.z = THREE.MathUtils.lerp(armR.rotation.z, 0, 0.1); 
-
                 legL.rotation.x = THREE.MathUtils.lerp(legL.rotation.x, 0, 0.1); legR.rotation.x = THREE.MathUtils.lerp(legR.rotation.x, 0, 0.1); legL.rotation.z = 0; legR.rotation.z = 0; 
             }
         }
