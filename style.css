@@ -120,7 +120,7 @@ body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; 
     #chat-container { bottom: auto; top: 70px; width: 90%; left: 50%; transform: translateX(-50%); }
     #chat-toggle-btn { bottom: auto; top: 15px; padding: 8px 15px; font-size: 12px; }
     #sound-btn { top: 180px; left: 20px; padding: 8px 15px; font-size: 12px; }
-    #hud-stats { top: 50px !important; left: 20px !important; padding: 8px 12px !important; font-size: 12px !important;}
-    #update-name-btn { top: 135px; left: 20px; padding: 8px 15px; font-size: 12px; }
+    #hud-stats { top: 48px !important; left: 20px !important; padding: 8px 12px !important; font-size: 12px !important;}
+    #update-name-btn { top: 138px; left: 20px; padding: 8px 15px; font-size: 12px; }
     #minimap-container { top: 110px; right: 20px; width: 90px; height: 90px; border-width: 2px; }
 }
