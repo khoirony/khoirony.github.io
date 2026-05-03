@@ -40,46 +40,16 @@ let localPigs = {}; let localItems = {}; let carriedItemId = null;
 let localStats = { coins: 0, fish: 0 }; let isFishing = false; 
 const uiCoins = document.getElementById('ui-coins'); const uiFish = document.getElementById('ui-fish');
 
-// === SETUP MINIMAP (KANOVAS 2D) ===
-const minimapCanvas = document.getElementById('minimap');
-const mapCtx = minimapCanvas.getContext('2d');
-
+const minimapCanvas = document.getElementById('minimap'); const mapCtx = minimapCanvas.getContext('2d');
 function updateMinimap() {
-    if (!mapCtx) return;
-    mapCtx.clearRect(0, 0, 120, 120);
-
-    // 1. Gambar Pulau (Hijau)
-    mapCtx.fillStyle = '#4B8B3B';
-    mapCtx.beginPath(); mapCtx.arc(60, 60, 60, 0, Math.PI * 2); mapCtx.fill();
-
-    // 2. Gambar Danau (Biru)
-    mapCtx.fillStyle = '#1E90FF';
-    mapCtx.beginPath(); mapCtx.arc(35 * 0.4 + 60, 15 * 0.4 + 60, 15 * 0.4, 0, Math.PI * 2); mapCtx.fill();
-
-    // 3. Gambar Rumah (Merah Gelap)
-    mapCtx.fillStyle = '#8b0000';
-    mapCtx.fillRect(-25 * 0.4 + 60 - 3, -15 * 0.4 + 60 - 3, 6, 6);
-    mapCtx.fillRect(-15 * 0.4 + 60 - 3, -25 * 0.4 + 60 - 3, 6, 6);
-
-    // 4. Gambar Tenda (Oranye)
-    mapCtx.fillStyle = '#FF8C00';
-    mapCtx.beginPath(); mapCtx.arc(-35 * 0.4 + 60, -5 * 0.4 + 60, 3, 0, Math.PI*2); mapCtx.fill();
-    mapCtx.beginPath(); mapCtx.arc(45 * 0.4 + 60, 20 * 0.4 + 60, 3, 0, Math.PI*2); mapCtx.fill();
-
-    // 5. Gambar TOKO IKAN (Dipindah ke koordinat baru 20, 25)
-    mapCtx.fillStyle = '#00ffff';
-    mapCtx.fillRect(20 * 0.4 + 60 - 4, 25 * 0.4 + 60 - 4, 8, 8); 
-    
-    // 6. Gambar Player (Panah Merah)
-    const px = player.position.x * 0.4 + 60;
-    const pz = player.position.z * 0.4 + 60;
-    
-    mapCtx.fillStyle = 'red';
-    mapCtx.beginPath(); mapCtx.arc(px, pz, 3, 0, Math.PI * 2); mapCtx.fill();
-    
-    const dir = new THREE.Vector3(); player.getWorldDirection(dir);
-    mapCtx.strokeStyle = 'white'; mapCtx.lineWidth = 2;
-    mapCtx.beginPath(); mapCtx.moveTo(px, pz); mapCtx.lineTo(px + dir.x * 6, pz + dir.z * 6); mapCtx.stroke();
+    if (!mapCtx) return; mapCtx.clearRect(0, 0, 120, 120);
+    mapCtx.fillStyle = '#4B8B3B'; mapCtx.beginPath(); mapCtx.arc(60, 60, 60, 0, Math.PI * 2); mapCtx.fill();
+    mapCtx.fillStyle = '#1E90FF'; mapCtx.beginPath(); mapCtx.arc(35 * 0.4 + 60, 15 * 0.4 + 60, 15 * 0.4, 0, Math.PI * 2); mapCtx.fill();
+    mapCtx.fillStyle = '#8b0000'; mapCtx.fillRect(-25 * 0.4 + 60 - 3, -15 * 0.4 + 60 - 3, 6, 6); mapCtx.fillRect(-15 * 0.4 + 60 - 3, -25 * 0.4 + 60 - 3, 6, 6);
+    mapCtx.fillStyle = '#FF8C00'; mapCtx.beginPath(); mapCtx.arc(-35 * 0.4 + 60, -5 * 0.4 + 60, 3, 0, Math.PI*2); mapCtx.fill(); mapCtx.beginPath(); mapCtx.arc(45 * 0.4 + 60, 20 * 0.4 + 60, 3, 0, Math.PI*2); mapCtx.fill();
+    mapCtx.fillStyle = '#00ffff'; mapCtx.fillRect(20 * 0.4 + 60 - 4, 25 * 0.4 + 60 - 4, 8, 8); 
+    const px = player.position.x * 0.4 + 60; const pz = player.position.z * 0.4 + 60; mapCtx.fillStyle = 'red'; mapCtx.beginPath(); mapCtx.arc(px, pz, 3, 0, Math.PI * 2); mapCtx.fill();
+    const dir = new THREE.Vector3(); player.getWorldDirection(dir); mapCtx.strokeStyle = 'white'; mapCtx.lineWidth = 2; mapCtx.beginPath(); mapCtx.moveTo(px, pz); mapCtx.lineTo(px + dir.x * 6, pz + dir.z * 6); mapCtx.stroke();
 }
 
 socket.on('updatePlayers', (serverPlayers) => {
@@ -99,8 +69,15 @@ socket.on('timeUpdate', (data) => {
     if (h >= 6 && h < 10) { period = 'Morning'; newIsDay = true; } else if (h >= 10 && h < 15) { period = 'Afternoon'; newIsDay = true; } else if (h >= 15 && h < 18) { period = 'Evening'; newIsDay = true; } else { period = 'Night'; newIsDay = false; }
     if (newIsDay !== isDay && scene) {
         isDay = newIsDay;
-        if(isDay) { scene.background = new THREE.Color(0x87CEEB); scene.fog.color.setHex(0x87CEEB); dirLight.intensity = 1.0; ambientLight.intensity = 0.5; document.body.style.background = '#87CEEB'; for (let id in localItems) { if (localItems[id].type === 'torch') { localItems[id].torchData.light.intensity = 0; localItems[id].torchData.fire.visible = false; } } } 
-        else { scene.background = new THREE.Color(0x05051a); scene.fog.color.setHex(0x05051a); dirLight.intensity = 0.1; ambientLight.intensity = 0.1; document.body.style.background = '#05051a'; for (let id in localItems) { if (localItems[id].type === 'torch') { localItems[id].torchData.light.intensity = 2.0; localItems[id].torchData.fire.visible = true; } } }
+        if(isDay) { 
+            scene.background = new THREE.Color(0x87CEEB); scene.fog.color.setHex(0x87CEEB); dirLight.intensity = 1.0; ambientLight.intensity = 0.5; document.body.style.background = '#87CEEB'; 
+            for (let id in localItems) { if (localItems[id].type === 'torch') { localItems[id].torchData.light.intensity = 0; localItems[id].torchData.fire.visible = false; } } 
+        } 
+        else { 
+            scene.background = new THREE.Color(0x05051a); scene.fog.color.setHex(0x05051a); dirLight.intensity = 0.1; ambientLight.intensity = 0.1; document.body.style.background = '#05051a'; 
+            // INTENSITAS NAIK JADI 150
+            for (let id in localItems) { if (localItems[id].type === 'torch') { localItems[id].torchData.light.intensity = 150; localItems[id].torchData.fire.visible = true; } } 
+        }
     }
     uiDay.innerText = `Day ${data.gameDay}`; uiClock.innerText = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`; uiPeriod.innerText = period;
 });
@@ -124,11 +101,11 @@ soundBtn.addEventListener('click', () => { mySound.currentTime = 0; mySound.play
 
 function animate() {
     requestAnimationFrame(animate);
-    
-    // Panggil fungsi pembaruan minimap
     updateMinimap();
 
-    if (!isDay) { for(let id in localItems) { if (localItems[id].type === 'torch' && !localItems[id].carriedBy) localItems[id].torchData.light.intensity = 1.8 + Math.random() * 0.4; } }
+    // INTENSITAS KEDIP NAIK JADI 120-170
+    if (!isDay) { for(let id in localItems) { if (localItems[id].type === 'torch') localItems[id].torchData.light.intensity = 120 + Math.random() * 50; } }
+    
     if (isFishing) { let shake = Math.sin(Date.now() * 0.01) * 0.05; armR.rotation.x = -1.2 + shake; armL.rotation.x = -1.2 + shake; legL.rotation.x = 0; legR.rotation.x = 0; }
     const currentSpeed = isRiding ? 0.45 : 0.25;
 
