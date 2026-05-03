@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="login-overlay">
+    <div id="login-overlay" style="display: none;">
         <div class="login-box">
             <h2 style="margin-top:0; color:#1e90ff;">EPIC OPEN WORLD</h2>
             <p>Enter your name to start playing:</p>
@@ -16,6 +16,12 @@
             <button id="play-btn">PLAY NOW</button>
         </div>
     </div>
+
+    <script>
+        if (!localStorage.getItem('mmo_username')) {
+            document.getElementById('login-overlay').style.display = 'flex';
+        }
+    </script>
 
     <div id="info">
         <div class="controls-hint"><b>Enter:</b> Chat (Type "/clear" to hide) | <b>WASD:</b> Move | <b>Space:</b> Jump | <b>Approach Object</b> to Interact</div>
