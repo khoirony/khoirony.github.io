@@ -44,26 +44,19 @@ export function createWorld(scene) {
     createTorch(scene, 30, 10);    
     createTorch(scene, 0, -5);     
 
-    // === SISTEM POHON SINKRON (SEEDED RANDOM) ===
-    // Mengganti Math.random() dengan Seeded Random agar posisi pohon sama persis di tiap perangkat.
-    let seed = 12345; // Kamu bisa mengubah angka ini untuk mendapatkan formasi map yang berbeda
-    function seededRandom() {
-        let x = Math.sin(seed++) * 10000;
-        return x - Math.floor(x);
-    }
-
-    for (let i = 0; i < 100; i++) {
-        // Kita menggunakan seededRandom() sebagai pengganti Math.random()
-        let x = (seededRandom() - 0.5) * 250; 
-        let z = (seededRandom() - 0.5) * 250;
-        
-        if (Math.sqrt(x*x + z*z) > 15 && (x > -15 || x < -35) && (x < 20 || x > 50)) {
-            createTree(scene, x, z);
-        }
-    }
+    // LOGIKA RANDOM POHON SUDAH DIHAPUS DARI SINI
 }
 
 // === FUNGSI PEMBUAT OBJEK ===
+
+// Pastikan createTree di-export agar bisa diakses dari game.js
+export function createTree(scene, x, z) {
+    const trunk = new THREE.Mesh(new THREE.BoxGeometry(1, 3, 1), new THREE.MeshStandardMaterial({ color: 0x8B4513 }));
+    trunk.position.set(x, 1.5, z); trunk.castShadow = true; scene.add(trunk); 
+    trunk.updateMatrixWorld(true); addWall(trunk);
+    const leaves = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshStandardMaterial({ color: 0x228B22 }));
+    leaves.position.set(x, 4, z); leaves.castShadow = true; scene.add(leaves);
+}
 
 export function createPigMesh() {
     const pig = new THREE.Group(); 
@@ -171,14 +164,6 @@ function createLake(scene, x, z, radius) {
     const sand = new THREE.Mesh(new THREE.TorusGeometry(radius + 1, 1, 8, 32), new THREE.MeshStandardMaterial({ color: 0xEEDC82 }));
     sand.position.set(x, -0.2, z); sand.rotation.x = Math.PI / 2;
     scene.add(sand); solidGrounds.push(sand);
-}
-
-function createTree(scene, x, z) {
-    const trunk = new THREE.Mesh(new THREE.BoxGeometry(1, 3, 1), new THREE.MeshStandardMaterial({ color: 0x8B4513 }));
-    trunk.position.set(x, 1.5, z); trunk.castShadow = true; scene.add(trunk); 
-    trunk.updateMatrixWorld(true); addWall(trunk);
-    const leaves = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshStandardMaterial({ color: 0x228B22 }));
-    leaves.position.set(x, 4, z); leaves.castShadow = true; scene.add(leaves);
 }
 
 function createMading(scene, title, lines, x, z, rotY = 0) {

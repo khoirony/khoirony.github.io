@@ -1,46 +1,30 @@
 // game.js
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { createWorld, solidGrounds, wallObjects, interactiveHouses, beds, torchLights, createPigMesh } from './environment.js';
+
+// Pastikan createTree ikut di-import
+import { createWorld, solidGrounds, wallObjects, interactiveHouses, beds, torchLights, createPigMesh, createTree } from './environment.js';
 import { initNetworking, remotePlayers, socket } from './networking.js';
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87CEEB);
-scene.fog = new THREE.Fog(0x87CEEB, 30, 150);
+scene.background = new THREE.Color(0x87CEEB); scene.fog = new THREE.Fog(0x87CEEB, 30, 150);
 
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0, 5, 10);
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000); camera.position.set(0, 5, 10);
+const renderer = new THREE.WebGLRenderer({ antialias: true }); renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; document.body.appendChild(renderer.domElement);
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
-document.body.appendChild(renderer.domElement);
-
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-scene.add(ambientLight);
-
-const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
-dirLight.position.set(50, 100, 50);
-dirLight.castShadow = true;
-dirLight.shadow.camera.left = -150; dirLight.shadow.camera.right = 150;
-dirLight.shadow.camera.top = 150; dirLight.shadow.camera.bottom = -150;
-dirLight.shadow.camera.far = 300;
-dirLight.shadow.mapSize.width = 2048; dirLight.shadow.mapSize.height = 2048;
-scene.add(dirLight);
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); scene.add(ambientLight);
+const dirLight = new THREE.DirectionalLight(0xffffff, 1.0); dirLight.position.set(50, 100, 50); dirLight.castShadow = true;
+dirLight.shadow.camera.left = -150; dirLight.shadow.camera.right = 150; dirLight.shadow.camera.top = 150; dirLight.shadow.camera.bottom = -150;
+dirLight.shadow.mapSize.width = 2048; dirLight.shadow.mapSize.height = 2048; scene.add(dirLight);
 
 createWorld(scene);
 
-const player = new THREE.Group(); scene.add(player); 
-player.position.set(0, 5, 5);
-player.rotation.order = 'YXZ'; 
-player.userData = {}; 
-
+const player = new THREE.Group(); scene.add(player); player.position.set(0, 5, 5); player.rotation.order = 'YXZ'; player.userData = {}; 
 function createLimb(w, h, d, color, yPivot) {
     const group = new THREE.Group(); const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({ color: color }));
     mesh.castShadow = true; mesh.position.y = -h / 2; group.add(mesh); group.position.y = yPivot; return group;
 }
-
 const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.75, 0.25), new THREE.MeshStandardMaterial({ color: 0x00aaff })); body.position.y = 1.125; body.castShadow = true; player.add(body);
 const head = createLimb(0.5, 0.5, 0.5, 0xffccaa, 1.5); head.children[0].position.y = 0.25; player.add(head);
 const armL = createLimb(0.25, 0.75, 0.25, 0xffccaa, 1.5); armL.position.x = 0.375; player.add(armL);
@@ -48,16 +32,12 @@ const armR = createLimb(0.25, 0.75, 0.25, 0xffccaa, 1.5); armR.position.x = -0.3
 const legL = createLimb(0.25, 0.75, 0.25, 0x0000aa, 0.75); legL.position.x = 0.125; player.add(legL);
 const legR = createLimb(0.25, 0.75, 0.25, 0x0000aa, 0.75); legR.position.x = -0.125; player.add(legR);
 
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true; controls.maxPolarAngle = Math.PI / 2.1; controls.minDistance = 2; controls.maxDistance = 20;
-let velocityY = 0; const gravity = -0.02; let isJumping = false;
-let moveTime = 0; const playerBox = new THREE.Box3();
-const raycaster = new THREE.Raycaster(); 
+const controls = new OrbitControls(camera, renderer.domElement); controls.enableDamping = true; controls.maxPolarAngle = Math.PI / 2.1; controls.minDistance = 2; controls.maxDistance = 20;
+let velocityY = 0; const gravity = -0.02; let isJumping = false; let moveTime = 0; const playerBox = new THREE.Box3(); const raycaster = new THREE.Raycaster(); 
 
 const keys = { w: false, a: false, s: false, d: false, ' ': false };
 const chatInput = document.getElementById('chat-input');
-window.addEventListener('keydown', (e) => { 
-    if(document.activeElement !== chatInput && keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = true; });
+window.addEventListener('keydown', (e) => { if(document.activeElement !== chatInput && keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = true; });
 window.addEventListener('keyup', (e) => { if(document.activeElement !== chatInput && keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = false; });
 
 let joyX = 0, joyY = 0, isJoyActive = false;
@@ -71,6 +51,17 @@ jumpBtn.addEventListener('touchstart', triggerJump, { passive: false }); jumpBtn
 initNetworking(scene, player);
 
 let localPigs = {}; 
+let treesInitialized = false;
+
+// Terima data koordinat pohon dari Server
+socket.on('initTrees', (serverTrees) => {
+    if (!treesInitialized) {
+        serverTrees.forEach(t => {
+            createTree(scene, t.x, t.z);
+        });
+        treesInitialized = true;
+    }
+});
 
 socket.on('updateNPCs', (serverPigs) => {
     for (let id in serverPigs) {
