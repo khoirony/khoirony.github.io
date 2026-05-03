@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Khoirony Arief - Epic Open World</title>
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.1/nipplejs.min.js"></script>
-    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -24,31 +22,24 @@
         <div id="hud-clock">08:00</div>
         <div id="hud-period">Morning</div>
     </div>
-    <div id="sound-btn">🔊 Sound Kehidupan</div>
 
-    <div id="chat-toggle-btn">💬 Chat</div>
-
-    <div id="chat-container">
-        <input type="text" id="chat-input" placeholder="Type a message..." autocomplete="off">
+    <div id="hud-stats" style="position:absolute; top:110px; right:20px; background:rgba(0,0,0,0.6); color:white; padding:10px 20px; border-radius:12px; font-weight:bold; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(4px); z-index:100; text-align: right;">
+        <div style="color: #ffd700; margin-bottom: 5px;">💰 Coins: <span id="ui-coins">0</span></div>
+        <div style="color: #00ffff;">🐟 Fish: <span id="ui-fish">0</span></div>
     </div>
 
+    <div id="minimap-container">
+        <canvas id="minimap" width="120" height="120"></canvas>
+    </div>
+
+    <div id="sound-btn">🔊 Sound</div>
+    <div id="chat-toggle-btn">💬 Chat</div>
+    <div id="chat-container"><input type="text" id="chat-input" placeholder="Type a message..." autocomplete="off"></div>
     <div id="action-btn">Action</div>
     <div id="fade-overlay"></div>
+    <div id="mobile-ui"><div id="joystick-zone"></div><div id="jump-btn">JUMP</div></div>
 
-    <div id="mobile-ui">
-        <div id="joystick-zone"></div>
-        <div id="jump-btn">JUMP</div>
-    </div>
-
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-            }
-        }
-    </script>
-
+    <script type="importmap">{"imports": {"three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"}}</script>
     <script type="module" src="game.js"></script>
 </body>
 </html>

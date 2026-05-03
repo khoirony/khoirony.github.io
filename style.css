@@ -2,135 +2,63 @@ body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; 
 #info { position: absolute; top: 15px; width: 100%; text-align: center; color: white; z-index: 100; pointer-events: none; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
 .controls-hint { font-size: 14px; background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 20px; display: inline-block; margin-top: 10px; border: 1px solid rgba(255,255,255,0.2);}
 
-/* --- UI WAKTU (HUD CLOCK) --- */
-#hud-time {
-    position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.5); color: white; 
-    padding: 10px 20px; border-radius: 12px; text-align: right; pointer-events: none; 
-    border: 1px solid rgba(255,255,255,0.2); z-index: 100; backdrop-filter: blur(4px); 
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3); text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-}
+#hud-time { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.5); color: white; padding: 10px 20px; border-radius: 12px; text-align: right; pointer-events: none; border: 1px solid rgba(255,255,255,0.2); z-index: 100; backdrop-filter: blur(4px); box-shadow: 0 4px 10px rgba(0,0,0,0.3); text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
 #hud-day { font-size: 14px; font-weight: bold; color: #ffd700; text-transform: uppercase; letter-spacing: 1px;}
 #hud-clock { font-size: 28px; font-weight: bold; margin: 2px 0; font-variant-numeric: tabular-nums; }
 #hud-period { font-size: 12px; color: #e2e8f0; font-weight: 600; }
 
-/* --- UI ONLINE PLAYERS --- */
-#hud-online {
-    position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.5); color: white;
-    padding: 10px 20px; border-radius: 12px; font-weight: bold; pointer-events: none;
-    border: 1px solid rgba(255,255,255,0.2); z-index: 100; backdrop-filter: blur(4px);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 8px;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.8); font-size: 16px;
-}
-.online-dot {
-    width: 12px; height: 12px; background-color: #94a3b8; border-radius: 50%;
-    transition: background-color 0.5s ease;
-}
-.online-dot.active {
-    background-color: #22c55e;
-    animation: pulse 2s infinite;
-}
+#hud-online { position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.5); color: white; padding: 10px 20px; border-radius: 12px; font-weight: bold; pointer-events: none; border: 1px solid rgba(255,255,255,0.2); z-index: 100; backdrop-filter: blur(4px); box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 8px; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); font-size: 16px; }
+.online-dot { width: 12px; height: 12px; background-color: #94a3b8; border-radius: 50%; transition: background-color 0.5s ease; }
+.online-dot.active { background-color: #22c55e; animation: pulse 2s infinite; }
 .online-dot.error { background-color: #ef4444; animation: none; }
+@keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } }
 
-@keyframes pulse {
-    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
-    70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
-    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
-}
-
-/* --- CHAT UI BARU --- */
-#chat-container {
-    display: none;
-    position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-    width: 90%; max-width: 400px; z-index: 1000; pointer-events: auto;
-}
-#chat-input {
-    width: 100%; padding: 12px 20px; border-radius: 25px; border: 2px solid rgba(255,255,255,0.5);
-    background: rgba(0,0,0,0.6); color: white; font-size: 16px; outline: none; backdrop-filter: blur(5px);
-    box-sizing: border-box;
-}
+#chat-container { display: none; position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; z-index: 1000; pointer-events: auto; }
+#chat-input { width: 100%; padding: 12px 20px; border-radius: 25px; border: 2px solid rgba(255,255,255,0.5); background: rgba(0,0,0,0.6); color: white; font-size: 16px; outline: none; backdrop-filter: blur(5px); box-sizing: border-box; }
 #chat-input:focus { border-color: #ffd700; }
-
-#chat-toggle-btn {
-    position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-    padding: 10px 25px; border-radius: 25px; background: rgba(0,0,0,0.6);
-    color: white; border: 2px solid rgba(255,255,255,0.5); font-weight: bold; font-size: 14px;
-    cursor: pointer; z-index: 1000; backdrop-filter: blur(5px); pointer-events: auto;
-}
+#chat-toggle-btn { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); padding: 10px 25px; border-radius: 25px; background: rgba(0,0,0,0.6); color: white; border: 2px solid rgba(255,255,255,0.5); font-weight: bold; font-size: 14px; cursor: pointer; z-index: 1000; backdrop-filter: blur(5px); pointer-events: auto; }
 #chat-toggle-btn:hover { background: rgba(0,0,0,0.8); border-color: #ffd700; }
 
 #mobile-ui { position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; z-index: 99; display: none; }
 #joystick-zone { position: absolute; bottom: 30px; left: 30px; width: 120px; height: 120px; pointer-events: auto; }
-#jump-btn {
-    position: absolute; bottom: 50px; right: 40px; width: 70px; height: 70px; border-radius: 50%;
-    background: rgba(255, 255, 255, 0.3); border: 2px solid rgba(255, 255, 255, 0.6);
-    color: white; font-weight: bold; pointer-events: auto; backdrop-filter: blur(4px);
-    display: flex; align-items: center; justify-content: center; user-select: none; -webkit-tap-highlight-color: transparent;
-}
+#jump-btn { position: absolute; bottom: 50px; right: 40px; width: 70px; height: 70px; border-radius: 50%; background: rgba(255, 255, 255, 0.3); border: 2px solid rgba(255, 255, 255, 0.6); color: white; font-weight: bold; pointer-events: auto; backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; user-select: none; -webkit-tap-highlight-color: transparent; }
 #jump-btn:active { background: rgba(255, 255, 255, 0.6); transform: scale(0.95); }
-
-#action-btn {
-    position: absolute; bottom: 150px; right: 40px; padding: 15px 25px; border-radius: 30px;
-    background: rgba(255, 215, 0, 0.8); border: 2px solid white; color: black; font-weight: bold; font-size: 16px;
-    pointer-events: auto; display: none; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 101;
-    user-select: none; -webkit-tap-highlight-color: transparent;
-}
+#action-btn { position: absolute; bottom: 150px; right: 40px; padding: 15px 25px; border-radius: 30px; background: rgba(255, 215, 0, 0.8); border: 2px solid white; color: black; font-weight: bold; font-size: 16px; pointer-events: auto; display: none; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 101; user-select: none; -webkit-tap-highlight-color: transparent; }
 #action-btn:hover { background: rgba(255, 215, 0, 1); transform: scale(1.05); }
 
-#fade-overlay {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background: black; opacity: 0; pointer-events: none; z-index: 1000;
-    transition: opacity 1.5s ease-in-out;
-}
+#fade-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: black; opacity: 0; pointer-events: none; z-index: 1000; transition: opacity 1.5s ease-in-out; }
+#sound-btn { position: absolute; top: 80px; left: 20px; padding: 10px 20px; border-radius: 25px; background: rgba(0,0,0,0.6); color: white; border: 2px solid rgba(255,255,255,0.5); font-weight: bold; font-size: 14px; cursor: pointer; z-index: 1000; backdrop-filter: blur(5px); pointer-events: auto; user-select: none; }
+#sound-btn:active { transform: scale(0.95); background: rgba(255,255,255,0.3); }
 
-/* --- TOMBOL SUARA --- */
-#sound-btn {
-    position: absolute; 
-    top: 80px; /* Posisinya di bawah indikator Online */
-    left: 20px; 
-    padding: 10px 20px; 
-    border-radius: 25px; 
-    background: rgba(0,0,0,0.6);
-    color: white; 
-    border: 2px solid rgba(255,255,255,0.5); 
-    font-weight: bold; 
-    font-size: 14px;
-    cursor: pointer; 
-    z-index: 1000; 
-    backdrop-filter: blur(5px); 
-    pointer-events: auto;
-    user-select: none;
+/* --- GAYA MINIMAP --- */
+#minimap-container {
+    position: absolute;
+    top: 170px;  /* Posisi di bawah HUD Poin Ikan */
+    right: 20px;
+    width: 120px;
+    height: 120px;
+    border: 3px solid rgba(255, 255, 255, 0.7);
+    border-radius: 50%;
+    overflow: hidden;
+    z-index: 100;
+    background: #006994; /* Warna laut */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    pointer-events: none; /* Agar tidak menghalangi klik */
 }
-#sound-btn:active {
-    transform: scale(0.95);
-    background: rgba(255,255,255,0.3);
-}
+#minimap { width: 100%; height: 100%; }
 
 @media (max-width: 800px) { 
-    #mobile-ui { display: block; } 
-    .controls-hint { display: none; }
+    #mobile-ui { display: block; } .controls-hint { display: none; }
     #hud-time, #hud-online { top: 10px; padding: 8px 15px; font-size: 12px; }
     .online-dot { width: 8px; height: 8px; }
-
-    /* --- PERBAIKAN TATA LETAK MOBILE --- */
-    
-    /* 1. Joystick dipojokkan ke kiri bawah */
     #joystick-zone { bottom: 20px; left: 20px; width: 100px; height: 100px; }
-    
-    /* 2. Tombol lompat dipojokkan ke kanan bawah */
     #jump-btn { bottom: 30px; right: 20px; width: 60px; height: 60px; font-size: 12px; }
-    
-    /* 3. Tombol Aksi (Tidur/Naik Babi) diamankan di atas tombol lompat */
     #action-btn { bottom: 110px; right: 20px; padding: 10px 20px; font-size: 14px; }
-    
-    /* 4. Kotak Chat dipindah ke ATAS */
-    #chat-container { 
-        bottom: auto; top: 70px; width: 90%; left: 50%; transform: translateX(-50%);
-    }
-
-    /* 5. Tombol Chat ditaruh di tengah atas layar HP */
-    #chat-toggle-btn {
-        bottom: auto; top: 15px; padding: 8px 15px; font-size: 12px;
-    }
-
+    #chat-container { bottom: auto; top: 70px; width: 90%; left: 50%; transform: translateX(-50%); }
+    #chat-toggle-btn { bottom: auto; top: 15px; padding: 8px 15px; font-size: 12px; }
     #sound-btn { top: 60px; left: 10px; padding: 8px 15px; font-size: 12px; }
+    
+    /* Penyesuaian Minimap & HUD Stats di Mobile */
+    #hud-stats { top: 65px !important; right: 10px !important; padding: 8px 12px !important; font-size: 12px !important;}
+    #minimap-container { top: 135px; right: 10px; width: 90px; height: 90px; border-width: 2px; }
 }
