@@ -40,7 +40,8 @@
 
     <div id="hud-stats" style="position:absolute; top:65px; left:20px; background:rgba(0,0,0,0.6); color:white; padding:10px 20px; border-radius:12px; font-weight:bold; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(4px); z-index:100; text-align: right;">
         <div style="color: #ffd700; margin-bottom: 5px;">💰 Coins: <span id="ui-coins">0</span></div>
-        <div style="color: #00ffff;">🐟 Fish: <span id="ui-fish">0</span></div>
+        <div style="color: #00ffff; margin-bottom: 5px;">🐟 Fish: <span id="ui-fish">0</span></div>
+        <div style="color: #ff4444;">🍎 Apples: <span id="ui-apples">0</span></div>
     </div>
 
     <div id="minimap-container">
@@ -48,12 +49,14 @@
     </div>
 
     <div id="sound-btn">🔊 Sound</div>
-    
     <div id="update-name-btn">✏️ Change Name</div>
 
     <div id="chat-toggle-btn">💬 Chat</div>
     <div id="chat-container"><input type="text" id="chat-input" placeholder="Type a message..." autocomplete="off"></div>
-    <div id="action-btn">Action</div>
+    
+    <div id="action-menu"></div>
+    <div id="action-btn">⚙️ Action</div>
+    
     <div id="fade-overlay"></div>
     <div id="mobile-ui"><div id="joystick-zone"></div><div id="jump-btn">JUMP</div></div>
 
