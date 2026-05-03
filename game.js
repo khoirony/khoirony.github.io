@@ -1,14 +1,9 @@
 // game.js
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-
-// Import objek dunia, termasuk array torchLights
-import { createWorld, solidGrounds, wallObjects, interactiveHouses, npcs, beds, torchLights } from './environment.js';
+import { createWorld, solidGrounds, wallObjects, interactiveHouses, beds, torchLights, createPigMesh } from './environment.js';
 import { initNetworking, remotePlayers, socket } from './networking.js';
 
-// ==========================================
-// 1. SETUP SCENE, CAMERA, RENDERER
-// ==========================================
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87CEEB);
 scene.fog = new THREE.Fog(0x87CEEB, 30, 150);
@@ -34,14 +29,8 @@ dirLight.shadow.camera.far = 300;
 dirLight.shadow.mapSize.width = 2048; dirLight.shadow.mapSize.height = 2048;
 scene.add(dirLight);
 
-// ==========================================
-// 2. BANGUN DUNIA
-// ==========================================
 createWorld(scene);
 
-// ==========================================
-// 3. KARAKTER PEMAIN LOKAL
-// ==========================================
 const player = new THREE.Group(); scene.add(player); 
 player.position.set(0, 5, 5);
 player.rotation.order = 'YXZ'; 
@@ -59,12 +48,8 @@ const armR = createLimb(0.25, 0.75, 0.25, 0xffccaa, 1.5); armR.position.x = -0.3
 const legL = createLimb(0.25, 0.75, 0.25, 0x0000aa, 0.75); legL.position.x = 0.125; player.add(legL);
 const legR = createLimb(0.25, 0.75, 0.25, 0x0000aa, 0.75); legR.position.x = -0.125; player.add(legR);
 
-// ==========================================
-// 4. KONTROL & INPUT
-// ==========================================
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; controls.maxPolarAngle = Math.PI / 2.1; controls.minDistance = 2; controls.maxDistance = 20;
-
 let velocityY = 0; const gravity = -0.02; let isJumping = false;
 let moveTime = 0; const playerBox = new THREE.Box3();
 const raycaster = new THREE.Raycaster(); 
@@ -72,194 +57,143 @@ const raycaster = new THREE.Raycaster();
 const keys = { w: false, a: false, s: false, d: false, ' ': false };
 const chatInput = document.getElementById('chat-input');
 window.addEventListener('keydown', (e) => { 
-    if(document.activeElement === chatInput) return;
-    if (keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = true; 
-});
-window.addEventListener('keyup', (e) => { 
-    if(document.activeElement === chatInput) return;
-    if (keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = false; 
-});
+    if(document.activeElement !== chatInput && keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = true; });
+window.addEventListener('keyup', (e) => { if(document.activeElement !== chatInput && keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = false; });
 
 let joyX = 0, joyY = 0, isJoyActive = false;
 const joystickManager = nipplejs.create({ zone: document.getElementById('joystick-zone'), mode: 'static', position: { left: '50%', top: '50%' }, color: 'white' });
 joystickManager.on('move', (evt, data) => { isJoyActive = true; joyX = data.vector.x; joyY = data.vector.y; });
 joystickManager.on('end', () => { isJoyActive = false; joyX = 0; joyY = 0; });
-
 const jumpBtn = document.getElementById('jump-btn');
 const triggerJump = (e) => { e.preventDefault(); if (!isJumping && !isSleeping) { velocityY = 0.3; isJumping = true; } };
-jumpBtn.addEventListener('touchstart', triggerJump, { passive: false });
-jumpBtn.addEventListener('mousedown', triggerJump);
+jumpBtn.addEventListener('touchstart', triggerJump, { passive: false }); jumpBtn.addEventListener('mousedown', triggerJump);
 
-// ==========================================
-// 5. INISIALISASI NETWORKING
-// ==========================================
 initNetworking(scene, player);
 
-// ==========================================
-// 6. SISTEM WAKTU & AKSI (BERBASIS SERVER)
-// ==========================================
-let isDay = true; 
-const uiDay = document.getElementById('hud-day'); 
-const uiClock = document.getElementById('hud-clock'); 
-const uiPeriod = document.getElementById('hud-period');
+let localPigs = {}; 
 
-// Dengarkan detak waktu dari Server
+socket.on('updateNPCs', (serverPigs) => {
+    for (let id in serverPigs) {
+        let sPig = serverPigs[id];
+
+        if (!localPigs[id]) {
+            let pigObj = createPigMesh();
+            scene.add(pigObj.mesh);
+            localPigs[id] = { ...pigObj, id: id, targetX: sPig.x, targetZ: sPig.z, targetRotY: sPig.rotationY, state: sPig.state, moveTime: 0, velocityY: 0 };
+            localPigs[id].mesh.position.set(sPig.x, 0, sPig.z);
+        }
+
+        localPigs[id].targetX = sPig.x;
+        localPigs[id].targetZ = sPig.z;
+        localPigs[id].targetRotY = sPig.rotationY;
+        localPigs[id].state = sPig.state;
+        localPigs[id].riddenBy = sPig.riddenBy;
+    }
+});
+
+let isDay = true; const uiDay = document.getElementById('hud-day'); const uiClock = document.getElementById('hud-clock'); const uiPeriod = document.getElementById('hud-period');
 socket.on('timeUpdate', (data) => {
-    const serverTime = data.gameTime;
-    const serverDay = data.gameDay;
-
-    const h = Math.floor(serverTime / 60); 
-    const m = Math.floor(serverTime % 60);
-    let period = 'Malam'; 
-    let newIsDay = false;
-
-    if (h >= 6 && h < 10) { period = 'Pagi'; newIsDay = true; }
-    else if (h >= 10 && h < 15) { period = 'Siang'; newIsDay = true; }
-    else if (h >= 15 && h < 18) { period = 'Sore'; newIsDay = true; }
-    else { period = 'Malam'; newIsDay = false; }
-
-    // Jika terjadi perubahan pergantian Siang/Malam
+    const h = Math.floor(data.gameTime / 60); const m = Math.floor(data.gameTime % 60); let period = 'Malam'; let newIsDay = false;
+    if (h >= 6 && h < 10) { period = 'Pagi'; newIsDay = true; } else if (h >= 10 && h < 15) { period = 'Siang'; newIsDay = true; } else if (h >= 15 && h < 18) { period = 'Sore'; newIsDay = true; } else { period = 'Malam'; newIsDay = false; }
     if (newIsDay !== isDay && scene) {
         isDay = newIsDay;
         if(isDay) {
-            // Pagi / Siang
-            scene.background = new THREE.Color(0x87CEEB); scene.fog.color.setHex(0x87CEEB);
-            dirLight.intensity = 1.0; ambientLight.intensity = 0.5; document.body.style.background = '#87CEEB';
-            
-            // Matikan Obor
-            torchLights.forEach(torch => {
-                torch.light.intensity = 0;
-                torch.fire.visible = false;
-            });
+            scene.background = new THREE.Color(0x87CEEB); scene.fog.color.setHex(0x87CEEB); dirLight.intensity = 1.0; ambientLight.intensity = 0.5; document.body.style.background = '#87CEEB';
+            torchLights.forEach(torch => { torch.light.intensity = 0; torch.fire.visible = false; });
         } else {
-            // Malam
-            scene.background = new THREE.Color(0x05051a); scene.fog.color.setHex(0x05051a);
-            dirLight.intensity = 0.1; ambientLight.intensity = 0.1; document.body.style.background = '#05051a';
-            
-            // Nyalakan Obor
-            torchLights.forEach(torch => {
-                torch.light.intensity = 2.0; 
-                torch.fire.visible = true;
-            });
+            scene.background = new THREE.Color(0x05051a); scene.fog.color.setHex(0x05051a); dirLight.intensity = 0.1; ambientLight.intensity = 0.1; document.body.style.background = '#05051a';
+            torchLights.forEach(torch => { torch.light.intensity = 2.0; torch.fire.visible = true; });
         }
     }
-
-    // Update Tampilan Jam HUD
-    uiDay.innerText = `Hari ke-${serverDay}`;
-    uiClock.innerText = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-    uiPeriod.innerText = period;
+    uiDay.innerText = `Hari ke-${data.gameDay}`; uiClock.innerText = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`; uiPeriod.innerText = period;
 });
 
-const actionBtn = document.getElementById('action-btn');
-const fadeOverlay = document.getElementById('fade-overlay');
-let activeBed = null; let activePig = null;
-let isSleeping = false; let previousPlayerPos = new THREE.Vector3(); let previousPlayerRot = new THREE.Euler();
+const actionBtn = document.getElementById('action-btn'); const fadeOverlay = document.getElementById('fade-overlay');
+let activeBed = null; let activePig = null; let isSleeping = false; let previousPlayerPos = new THREE.Vector3(); let previousPlayerRot = new THREE.Euler();
 let isRiding = false; let mountedPig = null;
 
 actionBtn.addEventListener('click', () => {
-    if (isRiding) {
-        isRiding = false; mountedPig.state = 'idle'; mountedPig = null;
+    if (isRiding) { 
+        isRiding = false; mountedPig = null;
+        socket.emit('unmountPig'); 
         player.position.x += 1; player.position.y += 0.5; actionBtn.style.display = 'none'; return;
     }
     if(!isSleeping && activeBed) {
-        isSleeping = true; actionBtn.style.display = 'none';
-        previousPlayerPos.copy(player.position); previousPlayerRot.copy(player.rotation);
-        player.position.copy(activeBed.sleepPosition); player.rotation.set(-Math.PI / 2, 0, activeBed.sleepRotY); velocityY = 0;
-        
-        fadeOverlay.style.opacity = 1;
-        
-        setTimeout(() => {
-            // KIRIM REQUEST TIME SKIP KE SERVER
-            socket.emit('requestTimeSkip');
-            
-            setTimeout(() => { 
-                fadeOverlay.style.opacity = 0; 
-                player.position.copy(previousPlayerPos); 
-                player.rotation.copy(previousPlayerRot); 
-                isSleeping = false; 
-            }, 1500);
-        }, 1500);
+        isSleeping = true; actionBtn.style.display = 'none'; previousPlayerPos.copy(player.position); previousPlayerRot.copy(player.rotation);
+        player.position.copy(activeBed.sleepPosition); player.rotation.set(-Math.PI / 2, 0, activeBed.sleepRotY); velocityY = 0; fadeOverlay.style.opacity = 1;
+        setTimeout(() => { socket.emit('requestTimeSkip'); setTimeout(() => { fadeOverlay.style.opacity = 0; player.position.copy(previousPlayerPos); player.rotation.copy(previousPlayerRot); isSleeping = false; }, 1500); }, 1500);
         return;
     }
-    if(!isSleeping && activePig) { isRiding = true; mountedPig = activePig; mountedPig.state = 'ridden'; return; }
+    if(!isSleeping && activePig) { 
+        isRiding = true; mountedPig = activePig; 
+        socket.emit('ridePig', activePig.id); 
+        return; 
+    }
 });
 
-// ==========================================
-// 7. SISTEM EFEK SUARA (SFX)
-// ==========================================
-const soundBtn = document.getElementById('sound-btn');
+const soundBtn = document.getElementById('sound-btn'); const mySound = new Audio('hidup-jokowi.mp3'); mySound.volume = 0.5; 
+soundBtn.addEventListener('click', () => { mySound.currentTime = 0; mySound.play().catch(e => console.log(e)); });
 
-const mySound = new Audio('hidup-jokowi.mp3');
-mySound.volume = 0.5; 
-
-soundBtn.addEventListener('click', () => {
-    mySound.currentTime = 0; 
-    mySound.play().catch(error => {
-        console.log("Browser memblokir autoplay suara:", error);
-    });
-});
-
-// ==========================================
-// 8. GAME LOOP UTAMA
-// ==========================================
 function animate() {
     requestAnimationFrame(animate);
-
-    // Efek Obor Berkedip (Flicker) saat malam
-    if (!isDay) {
-        torchLights.forEach(torch => {
-            torch.light.intensity = 1.8 + Math.random() * 0.4; 
-        });
-    }
-
+    if (!isDay) { torchLights.forEach(torch => { torch.light.intensity = 1.8 + Math.random() * 0.4; }); }
     const currentSpeed = isRiding ? 0.45 : 0.25;
 
-    // NPC Babi Logic
-    npcs.forEach(npc => {
-        if (npc.state === 'ridden') return;
-        npc.timer -= 0.016; 
-        if (npc.timer <= 0) {
-            npc.state = Math.random() > 0.5 ? 'walking' : 'idle';
-            npc.timer = 1 + Math.random() * 4; 
-            if (npc.state === 'walking') npc.direction = Math.random() * Math.PI * 2;
-            if (Math.random() > 0.8 && npc.velocityY === 0) npc.velocityY = 0.2; 
+    for (let id in localPigs) {
+        let npc = localPigs[id];
+
+        npc.mesh.position.x = THREE.MathUtils.lerp(npc.mesh.position.x, npc.targetX, 0.2);
+        npc.mesh.position.z = THREE.MathUtils.lerp(npc.mesh.position.z, npc.targetZ, 0.2);
+        let rotDiff = npc.targetRotY - npc.mesh.rotation.y; rotDiff = Math.atan2(Math.sin(rotDiff), Math.cos(rotDiff));
+        npc.mesh.rotation.y += rotDiff * 0.2;
+
+        if (npc.state === 'ridden') {
+            if (npc.riddenBy === socket.id) {
+                npc.mesh.position.set(player.position.x, player.position.y - 1.0, player.position.z);
+                npc.mesh.rotation.y = player.rotation.y;
+                npc.moveTime += 0.4;
+            } else if (remotePlayers[npc.riddenBy]) {
+                let otherPlayer = remotePlayers[npc.riddenBy];
+                npc.mesh.position.set(otherPlayer.position.x, otherPlayer.position.y - 1.0, otherPlayer.position.z);
+                npc.mesh.rotation.y = otherPlayer.rotation.y;
+                npc.moveTime += 0.4; 
+            }
+        } else {
+            let npcGroundY = -5;
+            raycaster.set(new THREE.Vector3(npc.mesh.position.x, npc.mesh.position.y + 1, npc.mesh.position.z), new THREE.Vector3(0, -1, 0));
+            let npcIntersects = raycaster.intersectObjects(solidGrounds, false);
+            if (npcIntersects.length > 0) npcGroundY = npcIntersects[0].point.y;
+
+            npc.velocityY += gravity; npc.mesh.position.y += npc.velocityY;
+            if (npc.mesh.position.y <= npcGroundY) { npc.mesh.position.y = npcGroundY; npc.velocityY = 0; }
+            if (npc.state === 'walking') npc.moveTime += 0.25;
         }
 
-        let npcGroundY = -5;
-        raycaster.set(new THREE.Vector3(npc.mesh.position.x, npc.mesh.position.y + 1, npc.mesh.position.z), new THREE.Vector3(0, -1, 0));
-        let npcIntersects = raycaster.intersectObjects(solidGrounds, false);
-        if (npcIntersects.length > 0) npcGroundY = npcIntersects[0].point.y;
-
-        npc.velocityY += gravity; npc.mesh.position.y += npc.velocityY;
-        if (npc.mesh.position.y <= npcGroundY) { npc.mesh.position.y = npcGroundY; npc.velocityY = 0; }
-
-        if (npc.state === 'walking') {
-            let diff = npc.direction - npc.mesh.rotation.y; diff = Math.atan2(Math.sin(diff), Math.cos(diff));
-            npc.mesh.rotation.y += diff * 0.05; npc.mesh.translateZ(npc.speed);
-            npc.moveTime += 0.25;
+        if (npc.state === 'walking' || npc.state === 'ridden') {
             npc.legs[0].rotation.x = Math.sin(npc.moveTime) * 0.5; npc.legs[3].rotation.x = Math.sin(npc.moveTime) * 0.5; 
             npc.legs[1].rotation.x = -Math.sin(npc.moveTime) * 0.5; npc.legs[2].rotation.x = -Math.sin(npc.moveTime) * 0.5; 
         } else {
             npc.legs.forEach(leg => leg.rotation.x = THREE.MathUtils.lerp(leg.rotation.x, 0, 0.1));
         }
-    });
+    }
 
-    // Cek Masuk Rumah
     let isInsideHouse = false;
     for (let house of interactiveHouses) {
-        if (house.box.containsPoint(player.position)) { house.roof.visible = false; isInsideHouse = true; } 
-        else { house.roof.visible = true; }
+        if (house.box.containsPoint(player.position)) { house.roof.visible = false; isInsideHouse = true; } else { house.roof.visible = true; }
     }
     if (isInsideHouse) controls.maxDistance = 5; else controls.maxDistance = 20;
 
-    // Logika Pemain & Aksi
     if (!isSleeping) {
         activeBed = null; activePig = null;
         if (isRiding) {
             actionBtn.style.display = 'block'; actionBtn.innerHTML = '🚶 Turun';
         } else {
             for (let bed of beds) { if (bed.triggerBox.containsPoint(player.position)) { activeBed = bed; break; } }
-            if (!activeBed) { for (let npc of npcs) { if (player.position.distanceTo(npc.mesh.position) < 3.0) { activePig = npc; break; } } }
+            if (!activeBed) { 
+                for (let id in localPigs) { 
+                    if ((localPigs[id].state === 'idle' || localPigs[id].state === 'walking') && player.position.distanceTo(localPigs[id].mesh.position) < 3.0) { activePig = localPigs[id]; break; } 
+                } 
+            }
             if (activeBed) { actionBtn.style.display = 'block'; actionBtn.innerHTML = '💤 Tidur'; } 
             else if (activePig) { actionBtn.style.display = 'block'; actionBtn.innerHTML = '🐎 Naik'; } 
             else { actionBtn.style.display = 'none'; }
@@ -279,7 +213,6 @@ function animate() {
 
         const camForward = new THREE.Vector3(); camera.getWorldDirection(camForward); camForward.y = 0; camForward.normalize();
         const camRight = new THREE.Vector3(-camForward.z, 0, camForward.x); 
-
         let inputY = (keys.w ? 1 : 0) - (keys.s ? 1 : 0); let inputX = (keys.d ? 1 : 0) - (keys.a ? 1 : 0);
         if (isJoyActive) { inputY += joyY; inputX += joyX; }
 
@@ -296,9 +229,9 @@ function animate() {
             
             for (let box of wallObjects) { if (playerBox.intersectsBox(box)) { isColliding = true; break; } }
             if (!isColliding) {
-                for (let npc of npcs) {
-                    if (npc === mountedPig) continue;
-                    let npcBox = new THREE.Box3().setFromObject(npc.mesh); npcBox.expandByScalar(-0.1); 
+                for (let id in localPigs) {
+                    if (localPigs[id] === mountedPig) continue;
+                    let npcBox = new THREE.Box3().setFromObject(localPigs[id].mesh); npcBox.expandByScalar(-0.1); 
                     if (playerBox.intersectsBox(npcBox)) { isColliding = true; break; }
                 }
             }
@@ -307,9 +240,6 @@ function animate() {
             
             if (isRiding) {
                 armL.rotation.x = 0.4; armR.rotation.x = 0.4; legL.rotation.x = -0.4; legR.rotation.x = -0.4; legL.rotation.z = -0.2; legR.rotation.z = 0.2;
-                mountedPig.moveTime += 0.4; 
-                mountedPig.legs[0].rotation.x = Math.sin(mountedPig.moveTime) * 0.8; mountedPig.legs[3].rotation.x = Math.sin(mountedPig.moveTime) * 0.8; 
-                mountedPig.legs[1].rotation.x = -Math.sin(mountedPig.moveTime) * 0.8; mountedPig.legs[2].rotation.x = -Math.sin(mountedPig.moveTime) * 0.8; 
             } else {
                 moveTime += (0.25 * (isJoyActive ? Math.max(Math.abs(joyX), Math.abs(joyY)) : 1)); 
                 armL.rotation.x = Math.sin(moveTime) * 0.8; armR.rotation.x = -Math.sin(moveTime) * 0.8;
@@ -320,20 +250,14 @@ function animate() {
             player.rotation.x = 0;
             if (isRiding) {
                 armL.rotation.x = 0.4; armR.rotation.x = 0.4; legL.rotation.x = -0.4; legR.rotation.x = -0.4;
-                mountedPig.legs.forEach(leg => leg.rotation.x = THREE.MathUtils.lerp(leg.rotation.x, 0, 0.1));
             } else {
                 armL.rotation.x = THREE.MathUtils.lerp(armL.rotation.x, 0, 0.1); armR.rotation.x = THREE.MathUtils.lerp(armR.rotation.x, 0, 0.1);
                 legL.rotation.x = THREE.MathUtils.lerp(legL.rotation.x, 0, 0.1); legR.rotation.x = THREE.MathUtils.lerp(legR.rotation.x, 0, 0.1);
                 legL.rotation.z = 0; legR.rotation.z = 0;
             }
         }
-        if (isRiding && mountedPig) {
-            mountedPig.mesh.position.set(player.position.x, player.position.y - 1.0, player.position.z);
-            mountedPig.mesh.rotation.y = player.rotation.y;
-        }
     } 
 
-    // Animasi Player Remote (Orang Lain)
     for (let id in remotePlayers) {
         const p = remotePlayers[id]; const anim = p.userData;
         const isMoving = p.position.distanceTo(anim.lastPos) > 0.01; 
@@ -348,13 +272,9 @@ function animate() {
         anim.lastPos.copy(p.position);
     }
 
-    controls.target.set(player.position.x, player.position.y + 1.5, player.position.z);
-    controls.update(); renderer.render(scene, camera);
+    controls.target.set(player.position.x, player.position.y + 1.5, player.position.z); controls.update(); renderer.render(scene, camera);
 }
 
 animate();
 
-window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-});
+window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });

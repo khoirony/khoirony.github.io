@@ -1,13 +1,11 @@
 // environment.js
 import * as THREE from 'three';
 
-// Array untuk menyimpan data dunia agar bisa diakses file lain
 export const solidGrounds = []; 
 export const wallObjects = [];  
 export const interactiveHouses = [];
-export const npcs = []; 
 export const beds = []; 
-export const torchLights = [];
+export const torchLights = []; 
 
 function addWall(mesh) { 
     mesh.updateMatrixWorld(true);
@@ -15,7 +13,6 @@ function addWall(mesh) {
 }
 
 export function createWorld(scene) {
-    // Laut & Pulau
     const ocean = new THREE.Mesh(new THREE.PlaneGeometry(2000, 2000), new THREE.MeshStandardMaterial({ color: 0x006994, transparent: true, opacity: 0.8 }));
     ocean.rotation.x = -Math.PI / 2; ocean.position.y = -2;
     scene.add(ocean); solidGrounds.push(ocean);
@@ -24,26 +21,22 @@ export function createWorld(scene) {
     island.position.y = -2; island.receiveShadow = true;
     scene.add(island); solidGrounds.push(island);
 
-    // Mading
     createMading(scene, "✨ ABOUT ME ✨", ["👋 Hi! I am Khoirony Arief", "💻 Software Engineer based in Bandung.", "🏢 Working at Far Capital (Property Tech).", "🚀 Fast Learner & Problem Solver."], 0, -10, 0);
     createMading(scene, "🛠️ TECH SKILLS", ["⚡ TALL Stack: Tailwind, AlpineJS, Laravel, Livewire", "🧩 No-Code: Bubble.io, Make, n8n", "☁️ Cloud/Deploy: VPS, Docker, AWS S3, CI/CD", "🎮 Game Dev: Unity, C#, 3D Math"], -20, -5, Math.PI / 3);
     createMading(scene, "🏢 WORK EXPERIENCE", ["▪ Far Capital (Property HUB) - Full-time", "   Built platforms for property buying & agents.", "▪ Far Capital (Wetopia & Matchbank)", "   Fintech screening & short-term rentals.", "▪ Govt of Jakarta - Freelance", "   Marine Fuel Monitoring System Dashboard."], 25, 5, -Math.PI / 4);
     createMading(scene, "🏆 WEEKEND PROJECTS", ["1️⃣ Personal Profile Game (WebGL / Unity)", "    Interactive 3D Portfolio Experience.", "2️⃣ Fintrac (Financial Report System)", "    Cash flow tracker for FIRE planning.", "3️⃣ Object Detection (Tensorflow JS)", "    Real-time browser computer vision."], 0, -35, 0);
 
-    // Rumah & Tenda
     createHollowHouse(scene, -25, -15, Math.PI / 4);  
     createHollowHouse(scene, -15, -25, -Math.PI / 6); 
     createTent(scene, -35, -5, 0);
     createLake(scene, 35, 10, 15);
     createTent(scene, 45, 20, -Math.PI/4);
 
-    // Gunung & Bukit
     createMountain(scene, 0, -80); 
     createMountain(scene, 80, -40); 
     createHill(scene, 15, -45, 1.5); 
     createHill(scene, -30, 20, 2);
 
-    // Penempatan Obor di tempat strategis
     createTorch(scene, 5, 5);      
     createTorch(scene, -5, 5);     
     createTorch(scene, -18, -12);  
@@ -51,54 +44,48 @@ export function createWorld(scene) {
     createTorch(scene, 30, 10);    
     createTorch(scene, 0, -5);     
 
-    // Pohon Acak
     for (let i = 0; i < 100; i++) {
         let x = (Math.random() - 0.5) * 250; let z = (Math.random() - 0.5) * 250;
         if (Math.sqrt(x*x + z*z) > 15 && (x > -15 || x < -35) && (x < 20 || x > 50)) createTree(scene, x, z);
     }
-
-    // Babi Acak
-    for (let i = 0; i < 25; i++) {
-        let x = (Math.random() - 0.5) * 150; let z = (Math.random() - 0.5) * 150;
-        if (Math.sqrt(x*x + z*z) > 10) createPig(scene, x, z);
-    }
 }
 
-// === FUNGSI-FUNGSI PEMBUAT OBJEK ===
+// === FUNGSI PEMBUAT OBJEK ===
+
+export function createPigMesh() {
+    const pig = new THREE.Group(); 
+    const mat = new THREE.MeshStandardMaterial({ color: 0xFFB6C1 });
+    
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 1.2), mat); body.position.y = 0.6; body.castShadow = true;
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), mat); head.position.set(0, 1, 0.6); head.castShadow = true;
+    pig.add(body, head); 
+    
+    function createLeg(lx, lz) {
+        const legGroup = new THREE.Group(); const leg = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.4, 0.2), mat);
+        leg.position.y = -0.2; leg.castShadow = true; legGroup.add(leg); legGroup.position.set(lx, 0.4, lz);
+        return legGroup;
+    }
+    const legFL = createLeg(0.25, 0.4); const legFR = createLeg(-0.25, 0.4);
+    const legBL = createLeg(0.25, -0.4); const legBR = createLeg(-0.25, -0.4);
+    pig.add(legFL, legFR, legBL, legBR);
+    
+    return { mesh: pig, legs: [legFL, legFR, legBL, legBR] };
+}
 
 function createTorch(scene, x, z) {
     const group = new THREE.Group();
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 2, 8), new THREE.MeshStandardMaterial({ color: 0x5c4033 }));
+    pole.position.y = 1; pole.castShadow = true; group.add(pole);
 
-    // 1. Tiang Kayu
-    const pole = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.1, 0.1, 2, 8),
-        new THREE.MeshStandardMaterial({ color: 0x5c4033 })
-    );
-    pole.position.y = 1;
-    pole.castShadow = true;
-    group.add(pole);
+    const fire = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.5, 8), new THREE.MeshBasicMaterial({ color: 0xff8c00 }));
+    fire.position.y = 2.2; fire.visible = false; group.add(fire);
 
-    // 2. Visual Api
-    const fire = new THREE.Mesh(
-        new THREE.ConeGeometry(0.2, 0.5, 8),
-        new THREE.MeshBasicMaterial({ color: 0xff8c00 })
-    );
-    fire.position.y = 2.2;
-    fire.visible = false; 
-    group.add(fire);
-
-    // 3. Cahaya Obor
     const light = new THREE.PointLight(0xffaa00, 0, 15); 
-    light.position.y = 2.5;
-    group.add(light);
+    light.position.y = 2.5; group.add(light);
 
-    group.position.set(x, 0, z);
-    scene.add(group);
-
+    group.position.set(x, 0, z); scene.add(group);
     torchLights.push({ light: light, fire: fire });
-
-    pole.updateMatrixWorld(true);
-    addWall(pole);
+    pole.updateMatrixWorld(true); addWall(pole);
 }
 
 function createHollowHouse(scene, x, z, rotY = 0) {
@@ -141,12 +128,8 @@ function createHollowHouse(scene, x, z, rotY = 0) {
     interactiveHouses.push({ box: triggerBox, roof: roof });
 
     bed.updateMatrixWorld(true);
-    const bedTrigger = new THREE.Box3().setFromObject(bed);
-    bedTrigger.expandByScalar(1.5); 
-    
-    const bedCenter = new THREE.Vector3();
-    bed.getWorldPosition(bedCenter);
-    bedCenter.y += 0.8; 
+    const bedTrigger = new THREE.Box3().setFromObject(bed); bedTrigger.expandByScalar(1.5); 
+    const bedCenter = new THREE.Vector3(); bed.getWorldPosition(bedCenter); bedCenter.y += 0.8; 
     beds.push({ triggerBox: bedTrigger, sleepPosition: bedCenter, sleepRotY: rotY + Math.PI/2 });
 }
 
@@ -183,31 +166,6 @@ function createTree(scene, x, z) {
     trunk.updateMatrixWorld(true); addWall(trunk);
     const leaves = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshStandardMaterial({ color: 0x228B22 }));
     leaves.position.set(x, 4, z); leaves.castShadow = true; scene.add(leaves);
-}
-
-function createPig(scene, x, z) {
-    const pig = new THREE.Group(); 
-    const mat = new THREE.MeshStandardMaterial({ color: 0xFFB6C1 });
-    
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 1.2), mat); body.position.y = 0.6; body.castShadow = true;
-    const head = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), mat); head.position.set(0, 1, 0.6); head.castShadow = true;
-    pig.add(body, head); 
-    
-    function createLeg(lx, lz) {
-        const legGroup = new THREE.Group(); const leg = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.4, 0.2), mat);
-        leg.position.y = -0.2; leg.castShadow = true; legGroup.add(leg); legGroup.position.set(lx, 0.4, lz);
-        return legGroup;
-    }
-    const legFL = createLeg(0.25, 0.4); const legFR = createLeg(-0.25, 0.4);
-    const legBL = createLeg(0.25, -0.4); const legBR = createLeg(-0.25, -0.4);
-    pig.add(legFL, legFR, legBL, legBR);
-    
-    pig.position.set(x, 0, z); pig.rotation.y = Math.random() * Math.PI * 2; scene.add(pig); 
-    
-    npcs.push({
-        mesh: pig, legs: [legFL, legFR, legBL, legBR],
-        state: 'idle', timer: Math.random() * 2, moveTime: 0, velocityY: 0, speed: 0.03 + Math.random() * 0.02, direction: pig.rotation.y
-    });
 }
 
 function createMading(scene, title, lines, x, z, rotY = 0) {
