@@ -31,7 +31,6 @@ const jumpBtn = document.getElementById('jump-btn'); const triggerJump = (e) => 
 
 initNetworking(scene, player);
 
-// === MANAJEMEN BARANG & NPC ===
 let localPigs = {}; 
 let localItems = {}; 
 let carriedItemId = null; 
@@ -47,7 +46,6 @@ socket.on('initItems', (serverItems) => {
         let groupToSpawn = (d.type === 'torch') ? objMesh.mesh : objMesh;
         scene.add(groupToSpawn);
         
-        // Simpan target koordinat aslinya
         localItems[id] = { id: id, type: d.type, group: groupToSpawn, torchData: (d.type === 'torch') ? objMesh : null, carriedBy: d.carriedBy, targetX: d.x, targetZ: d.z, targetRotY: d.rotY };
     }
 });
@@ -76,8 +74,8 @@ socket.on('updateNPCs', (serverPigs) => {
 
 let isDay = true; const uiDay = document.getElementById('hud-day'); const uiClock = document.getElementById('hud-clock'); const uiPeriod = document.getElementById('hud-period');
 socket.on('timeUpdate', (data) => {
-    const h = Math.floor(data.gameTime / 60); const m = Math.floor(data.gameTime % 60); let period = 'Malam'; let newIsDay = false;
-    if (h >= 6 && h < 10) { period = 'Pagi'; newIsDay = true; } else if (h >= 10 && h < 15) { period = 'Siang'; newIsDay = true; } else if (h >= 15 && h < 18) { period = 'Sore'; newIsDay = true; } else { period = 'Malam'; newIsDay = false; }
+    const h = Math.floor(data.gameTime / 60); const m = Math.floor(data.gameTime % 60); let period = 'Night'; let newIsDay = false;
+    if (h >= 6 && h < 10) { period = 'Morning'; newIsDay = true; } else if (h >= 10 && h < 15) { period = 'Afternoon'; newIsDay = true; } else if (h >= 15 && h < 18) { period = 'Evening'; newIsDay = true; } else { period = 'Night'; newIsDay = false; }
     if (newIsDay !== isDay && scene) {
         isDay = newIsDay;
         if(isDay) {
@@ -88,7 +86,7 @@ socket.on('timeUpdate', (data) => {
             for (let id in localItems) { if (localItems[id].type === 'torch') { localItems[id].torchData.light.intensity = 2.0; localItems[id].torchData.fire.visible = true; } }
         }
     }
-    uiDay.innerText = `Hari ke-${data.gameDay}`; uiClock.innerText = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`; uiPeriod.innerText = period;
+    uiDay.innerText = `Day ${data.gameDay}`; uiClock.innerText = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`; uiPeriod.innerText = period;
 });
 
 const actionBtn = document.getElementById('action-btn'); const fadeOverlay = document.getElementById('fade-overlay');
@@ -127,17 +125,14 @@ function animate() {
     if (!isDay) { for(let id in localItems) { if (localItems[id].type === 'torch' && !localItems[id].carriedBy) localItems[id].torchData.light.intensity = 1.8 + Math.random() * 0.4; } }
     const currentSpeed = isRiding ? 0.45 : 0.25;
 
-    // === RENDER ITEM (MELAYANG JIKA DIANGKUT) ===
     for (let id in localItems) {
         let item = localItems[id];
         if (item.carriedBy === socket.id) {
-            // Diangkut KITA (Local Player)
             item.group.position.set(player.position.x, player.position.y + 2.5, player.position.z);
             item.group.rotation.set(0, player.rotation.y, 0);
-            item.group.scale.set(0.3, 0.3, 0.3); // Perkecil agar tidak nutupi layar
+            item.group.scale.set(0.3, 0.3, 0.3); 
             item.group.visible = true;
         } else if (item.carriedBy) {
-            // Diangkut PEMAIN LAIN
             if (remotePlayers[item.carriedBy]) {
                 let rp = remotePlayers[item.carriedBy];
                 item.group.position.set(rp.position.x, rp.position.y + 2.5, rp.position.z);
@@ -145,13 +140,12 @@ function animate() {
                 item.group.scale.set(0.3, 0.3, 0.3);
                 item.group.visible = true;
             } else {
-                item.group.visible = false; // Sembunyikan jika player lain out-of-sync
+                item.group.visible = false; 
             }
         } else {
-            // Diletakkan di Tanah
             item.group.position.set(item.targetX, 0, item.targetZ);
             item.group.rotation.set(0, item.targetRotY, 0);
-            item.group.scale.set(1, 1, 1); // Kembalikan ke ukuran asli
+            item.group.scale.set(1, 1, 1); 
             item.group.visible = true;
         }
     }
@@ -181,9 +175,9 @@ function animate() {
         activeBed = null; activePig = null; activePickup = null;
         if (carriedItemId) {
             let itemName = localItems[carriedItemId].type.toUpperCase();
-            actionBtn.style.display = 'block'; actionBtn.innerHTML = `👇 Letak ${itemName}`;
+            actionBtn.style.display = 'block'; actionBtn.innerHTML = `👇 Place ${itemName}`;
         } else if (isRiding) {
-            actionBtn.style.display = 'block'; actionBtn.innerHTML = '🚶 Turun';
+            actionBtn.style.display = 'block'; actionBtn.innerHTML = '🚶 Dismount';
         } else {
             for (let bed of beds) { if (bed.triggerBox.containsPoint(player.position)) { activeBed = bed; break; } }
             if (!activeBed) {
@@ -198,9 +192,9 @@ function animate() {
                 for (let id in localPigs) { if ((localPigs[id].state === 'idle' || localPigs[id].state === 'walking') && player.position.distanceTo(localPigs[id].mesh.position) < 3.0) { activePig = localPigs[id]; break; } } 
             }
 
-            if (activeBed) { actionBtn.style.display = 'block'; actionBtn.innerHTML = '💤 Tidur'; } 
-            else if (activePickup) { actionBtn.style.display = 'block'; actionBtn.innerHTML = `🖐️ Angkut ${activePickup.type}`; }
-            else if (activePig) { actionBtn.style.display = 'block'; actionBtn.innerHTML = '🐎 Naik'; } 
+            if (activeBed) { actionBtn.style.display = 'block'; actionBtn.innerHTML = '💤 Sleep'; } 
+            else if (activePickup) { actionBtn.style.display = 'block'; actionBtn.innerHTML = `🖐️ Pick Up ${activePickup.type}`; }
+            else if (activePig) { actionBtn.style.display = 'block'; actionBtn.innerHTML = '🐎 Ride'; } 
             else { actionBtn.style.display = 'none'; }
         }
     }
@@ -226,7 +220,6 @@ function animate() {
                 for (let id in localItems) {
                     if (localItems[id].carriedBy) continue;
                     let itemBox = new THREE.Box3().setFromObject(localItems[id].group);
-                    // Perkecil sedikit hitbox Mading agar tidak nyangkut saat diletakkan
                     itemBox.expandByScalar(-0.2); 
                     if (playerBox.intersectsBox(itemBox)) { isColliding = true; break; }
                 }
