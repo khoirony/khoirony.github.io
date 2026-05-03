@@ -58,8 +58,8 @@ body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; 
     
     /* Penyesuaian UI Kiri di Mobile */
     #hud-stats { top: 50px !important; left: 20px !important; padding: 8px 12px !important; font-size: 12px !important;}
-    #sound-btn { top: 110px; left: 20px; padding: 8px 15px; font-size: 12px; }
-    #update-name-btn { top: 150px; left: 20px; padding: 8px 15px; font-size: 12px; }
+    #sound-btn { top: 115px; left: 20px; padding: 8px 15px; font-size: 12px; }
+    #update-name-btn { top: 160px; left: 20px; padding: 8px 15px; font-size: 12px; }
     
     #minimap-container { top: 110px; right: 20px; width: 90px; height: 90px; border-width: 2px; }
 }
