@@ -2,7 +2,6 @@ body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; 
 #info { position: absolute; top: 15px; width: 100%; text-align: center; color: white; z-index: 100; pointer-events: none; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
 .controls-hint { font-size: 14px; background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 20px; display: inline-block; margin-top: 10px; border: 1px solid rgba(255,255,255,0.2);}
 
-/* --- LOGIN OVERLAY --- */
 #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
 .login-box { background: white; padding: 30px; border-radius: 15px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.8); width: 80%; max-width: 350px; }
 .login-box p { color: #555; margin-bottom: 20px; font-weight: bold; }
@@ -36,8 +35,13 @@ body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; 
 #action-btn:hover { background: rgba(255, 215, 0, 1); transform: scale(1.05); }
 
 #fade-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: black; opacity: 0; pointer-events: none; z-index: 1000; transition: opacity 1.5s ease-in-out; }
+
+/* STYLE TOMBOL SOUND & CHANGE NAME */
 #sound-btn { position: absolute; top: 140px; left: 20px; padding: 10px 20px; border-radius: 25px; background: rgba(0,0,0,0.6); color: white; border: 2px solid rgba(255,255,255,0.5); font-weight: bold; font-size: 14px; cursor: pointer; z-index: 1000; backdrop-filter: blur(5px); pointer-events: auto; user-select: none; }
 #sound-btn:active { transform: scale(0.95); background: rgba(255,255,255,0.3); }
+
+#update-name-btn { position: absolute; top: 190px; left: 20px; padding: 10px 20px; border-radius: 25px; background: rgba(0,0,0,0.6); color: white; border: 2px solid rgba(255,255,255,0.5); font-weight: bold; font-size: 14px; cursor: pointer; z-index: 1000; backdrop-filter: blur(5px); pointer-events: auto; user-select: none; }
+#update-name-btn:active { transform: scale(0.95); background: rgba(255,255,255,0.3); }
 
 #minimap-container { position: absolute; top: 120px; right: 20px; width: 120px; height: 120px; border: 3px solid rgba(255, 255, 255, 0.7); border-radius: 50%; overflow: hidden; z-index: 100; background: #006994; box-shadow: 0 4px 15px rgba(0,0,0,0.5); pointer-events: none; }
 #minimap { width: 100%; height: 100%; }
@@ -51,7 +55,11 @@ body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; 
     #action-btn { bottom: 110px; right: 20px; padding: 10px 20px; font-size: 14px; }
     #chat-container { bottom: auto; top: 70px; width: 90%; left: 50%; transform: translateX(-50%); }
     #chat-toggle-btn { bottom: auto; top: 15px; padding: 8px 15px; font-size: 12px; }
-    #sound-btn { top: 110px; left: 20px; padding: 8px 15px; font-size: 12px; }
+    
+    /* Penyesuaian UI Kiri di Mobile */
     #hud-stats { top: 50px !important; left: 20px !important; padding: 8px 12px !important; font-size: 12px !important;}
+    #sound-btn { top: 110px; left: 20px; padding: 8px 15px; font-size: 12px; }
+    #update-name-btn { top: 150px; left: 20px; padding: 8px 15px; font-size: 12px; }
+    
     #minimap-container { top: 110px; right: 20px; width: 90px; height: 90px; border-width: 2px; }
 }

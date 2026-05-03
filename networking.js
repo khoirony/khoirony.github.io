@@ -4,7 +4,6 @@ import { io } from "https://cdn.socket.io/4.7.4/socket.io.esm.min.js";
 
 export const remotePlayers = {};
 
-// === 1. AMBIL KTP & NAMA DARI LOCALSTORAGE ===
 let myPlayerId = localStorage.getItem('mmo_player_id');
 if (!myPlayerId) { 
     myPlayerId = 'player_' + Math.random().toString(36).substr(2, 9); 
@@ -24,19 +23,17 @@ export function initNetworking(scene, localPlayer) {
     const loginOverlay = document.getElementById('login-overlay');
     const usernameInput = document.getElementById('username-input');
     const playBtn = document.getElementById('play-btn');
+    const updateNameBtn = document.getElementById('update-name-btn'); // Tangkap elemen tombol baru
 
-    // === 2. LOGIKA MUNCUL SEKALI (AUTO-SKIP LOGIN) ===
+    // Tampilkan nama lama di kotak input (jika ada)
+    if (myUsername) usernameInput.value = myUsername;
+
     if (myUsername) {
-        // Jika nama sudah ada, sembunyikan overlay SEGERA
         loginOverlay.style.display = 'none';
-        
-        // Tunggu sampai konek, lalu kirim nama ke server
         socket.on('connect', () => {
             socket.emit('setUsername', myUsername);
-            console.log("Auto-logged in as:", myUsername);
         });
     } else {
-        // Jika belum ada nama, pastikan overlay muncul
         loginOverlay.style.display = 'flex';
     }
 
@@ -45,16 +42,20 @@ export function initNetworking(scene, localPlayer) {
         if (name === "") name = "Guest_" + Math.floor(Math.random() * 1000);
         
         localStorage.setItem('mmo_username', name);
+        myUsername = name; // Update memori lokal
         socket.emit('setUsername', name);
         loginOverlay.style.display = 'none';
     });
 
-    // --- SISANYA TETAP SAMA ---
-    socket.on('connect', () => { 
-        onlineDot.classList.add('active'); 
-        onlineDot.classList.remove('error'); 
-    });
-    
+    // EVENT SAAT TOMBOL "CHANGE NAME" DIKLIK
+    if (updateNameBtn) {
+        updateNameBtn.addEventListener('click', () => {
+            usernameInput.value = myUsername; // Isi dengan nama saat ini
+            loginOverlay.style.display = 'flex'; // Tampilkan kembali kotaknya
+        });
+    }
+
+    socket.on('connect', () => { onlineDot.classList.add('active'); onlineDot.classList.remove('error'); });
     socket.on('playerCountUpdate', (count) => { onlineCountElement.innerText = count; });
 
     socket.on('updatePlayers', (serverPlayers) => {
@@ -102,14 +103,12 @@ export function initNetworking(scene, localPlayer) {
     socket.on('disconnect', () => { onlineCountElement.innerText = "Reconnecting..."; onlineDot.classList.remove('active'); });
     
     setInterval(() => {
-        // Hanya kirim posisi jika login screen sudah hilang
         if (socket.connected && loginOverlay.style.display === 'none') {
             socket.emit('move', { position: { x: localPlayer.position.x, y: localPlayer.position.y, z: localPlayer.position.z }, rotation: { y: localPlayer.rotation.y } });
         }
     }, 50);
 }
 
-// --- FUNGSI HELPER (createOtherPlayerModel, updateNametag, showChatBubble) TETAP SAMA ---
 function createLimb(w, h, d, color, yPivot) { const group = new THREE.Group(); const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({ color: color })); mesh.castShadow = true; mesh.position.y = -h / 2; group.add(mesh); group.position.y = yPivot; return group; }
 function createOtherPlayerModel() {
     const group = new THREE.Group(); group.rotation.order = 'YXZ';
