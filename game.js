@@ -4,7 +4,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 // Import dari file modular kita
 import { createWorld, solidGrounds, wallObjects, interactiveHouses, npcs, beds } from './environment.js';
-import { initNetworking, remotePlayers } from './networking.js';
+// Pastikan variabel 'socket' ikut di-import dari networking.js
+import { initNetworking, remotePlayers, socket } from './networking.js';
 
 // ==========================================
 // 1. SETUP SCENE, CAMERA, RENDERER
@@ -96,22 +97,29 @@ jumpBtn.addEventListener('mousedown', triggerJump);
 initNetworking(scene, player);
 
 // ==========================================
-// 6. SISTEM WAKTU & AKSI
+// 6. SISTEM WAKTU & AKSI (BERBASIS SERVER)
 // ==========================================
-let gameTime = 8 * 60; let gameDay = 1; let isDay = true; let timeSpeed = 1; 
-const uiDay = document.getElementById('hud-day'); const uiClock = document.getElementById('hud-clock'); const uiPeriod = document.getElementById('hud-period');
+let isDay = true; 
+const uiDay = document.getElementById('hud-day'); 
+const uiClock = document.getElementById('hud-clock'); 
+const uiPeriod = document.getElementById('hud-period');
 
-function updateGameTime() {
-    gameTime += timeSpeed;
-    if (gameTime >= 24 * 60) { gameTime = 0; gameDay++; }
-    const h = Math.floor(gameTime / 60); const m = Math.floor(gameTime % 60);
-    let period = 'Malam'; let newIsDay = false;
+// Dengarkan detak waktu dari Server
+socket.on('timeUpdate', (data) => {
+    const serverTime = data.gameTime;
+    const serverDay = data.gameDay;
+
+    const h = Math.floor(serverTime / 60); 
+    const m = Math.floor(serverTime % 60);
+    let period = 'Malam'; 
+    let newIsDay = false;
 
     if (h >= 6 && h < 10) { period = 'Pagi'; newIsDay = true; }
     else if (h >= 10 && h < 15) { period = 'Siang'; newIsDay = true; }
     else if (h >= 15 && h < 18) { period = 'Sore'; newIsDay = true; }
     else { period = 'Malam'; newIsDay = false; }
 
+    // Jika terjadi perubahan pergantian Siang/Malam (Termasuk saat di-skip)
     if (newIsDay !== isDay && scene) {
         isDay = newIsDay;
         if(isDay) {
@@ -123,11 +131,11 @@ function updateGameTime() {
         }
     }
 
-    uiDay.innerText = `Hari ke-${gameDay}`;
+    // Update Tampilan Jam HUD
+    uiDay.innerText = `Hari ke-${serverDay}`;
     uiClock.innerText = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
     uiPeriod.innerText = period;
-}
-setInterval(updateGameTime, 1000);
+});
 
 const actionBtn = document.getElementById('action-btn');
 const fadeOverlay = document.getElementById('fade-overlay');
@@ -144,10 +152,19 @@ actionBtn.addEventListener('click', () => {
         isSleeping = true; actionBtn.style.display = 'none';
         previousPlayerPos.copy(player.position); previousPlayerRot.copy(player.rotation);
         player.position.copy(activeBed.sleepPosition); player.rotation.set(-Math.PI / 2, 0, activeBed.sleepRotY); velocityY = 0;
+        
         fadeOverlay.style.opacity = 1;
+        
         setTimeout(() => {
-            if (isDay) { gameTime = 18 * 60; isDay = false; } else { gameTime = 6 * 60; gameDay++; isDay = true; }
-            setTimeout(() => { fadeOverlay.style.opacity = 0; player.position.copy(previousPlayerPos); player.rotation.copy(previousPlayerRot); isSleeping = false; }, 1500);
+            // KIRIM REQUEST TIME SKIP KE SERVER
+            socket.emit('requestTimeSkip');
+            
+            setTimeout(() => { 
+                fadeOverlay.style.opacity = 0; 
+                player.position.copy(previousPlayerPos); 
+                player.rotation.copy(previousPlayerRot); 
+                isSleeping = false; 
+            }, 1500);
         }, 1500);
         return;
     }
@@ -155,27 +172,22 @@ actionBtn.addEventListener('click', () => {
 });
 
 // ==========================================
-// 8. SISTEM EFEK SUARA (SFX)
+// 7. SISTEM EFEK SUARA (SFX)
 // ==========================================
 const soundBtn = document.getElementById('sound-btn');
 
-// Buat objek Audio (Ini pakai URL contoh, nanti bisa diganti URL mp3 milikmu sendiri)
 const mySound = new Audio('hidup-jokowi.mp3');
-// Set volume (0.0 sampai 1.0)
 mySound.volume = 0.5; 
 
 soundBtn.addEventListener('click', () => {
-    // Kembalikan waktu ke 0 agar suara bisa ditekan berkali-kali dengan cepat (spam)
     mySound.currentTime = 0; 
-    
-    // Mainkan suara
     mySound.play().catch(error => {
         console.log("Browser memblokir autoplay suara:", error);
     });
 });
 
 // ==========================================
-// 7. GAME LOOP UTAMA
+// 8. GAME LOOP UTAMA
 // ==========================================
 function animate() {
     requestAnimationFrame(animate);
