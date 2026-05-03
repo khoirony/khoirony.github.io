@@ -44,9 +44,22 @@ export function createWorld(scene) {
     createTorch(scene, 30, 10);    
     createTorch(scene, 0, -5);     
 
+    // === SISTEM POHON SINKRON (SEEDED RANDOM) ===
+    // Mengganti Math.random() dengan Seeded Random agar posisi pohon sama persis di tiap perangkat.
+    let seed = 12345; // Kamu bisa mengubah angka ini untuk mendapatkan formasi map yang berbeda
+    function seededRandom() {
+        let x = Math.sin(seed++) * 10000;
+        return x - Math.floor(x);
+    }
+
     for (let i = 0; i < 100; i++) {
-        let x = (Math.random() - 0.5) * 250; let z = (Math.random() - 0.5) * 250;
-        if (Math.sqrt(x*x + z*z) > 15 && (x > -15 || x < -35) && (x < 20 || x > 50)) createTree(scene, x, z);
+        // Kita menggunakan seededRandom() sebagai pengganti Math.random()
+        let x = (seededRandom() - 0.5) * 250; 
+        let z = (seededRandom() - 0.5) * 250;
+        
+        if (Math.sqrt(x*x + z*z) > 15 && (x > -15 || x < -35) && (x < 20 || x > 50)) {
+            createTree(scene, x, z);
+        }
     }
 }
 
