@@ -2,6 +2,15 @@ body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; 
 #info { position: absolute; top: 15px; width: 100%; text-align: center; color: white; z-index: 100; pointer-events: none; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
 .controls-hint { font-size: 14px; background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 20px; display: inline-block; margin-top: 10px; border: 1px solid rgba(255,255,255,0.2);}
 
+/* --- LOGIN OVERLAY --- */
+#login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
+.login-box { background: white; padding: 30px; border-radius: 15px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.8); width: 80%; max-width: 350px; }
+.login-box p { color: #555; margin-bottom: 20px; font-weight: bold; }
+#username-input { width: 100%; padding: 12px; border: 2px solid #ccc; border-radius: 8px; font-size: 18px; margin-bottom: 20px; box-sizing: border-box; text-align: center; font-weight: bold; outline: none; }
+#username-input:focus { border-color: #1e90ff; }
+#play-btn { width: 100%; padding: 15px; background: #22c55e; color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: 900; cursor: pointer; transition: transform 0.2s, background 0.2s; }
+#play-btn:hover { background: #16a34a; transform: scale(1.05); }
+
 #hud-time { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.5); color: white; padding: 10px 20px; border-radius: 12px; text-align: right; pointer-events: none; border: 1px solid rgba(255,255,255,0.2); z-index: 100; backdrop-filter: blur(4px); box-shadow: 0 4px 10px rgba(0,0,0,0.3); text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
 #hud-day { font-size: 14px; font-weight: bold; color: #ffd700; text-transform: uppercase; letter-spacing: 1px;}
 #hud-clock { font-size: 28px; font-weight: bold; margin: 2px 0; font-variant-numeric: tabular-nums; }
@@ -30,21 +39,7 @@ body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; 
 #sound-btn { position: absolute; top: 80px; left: 20px; padding: 10px 20px; border-radius: 25px; background: rgba(0,0,0,0.6); color: white; border: 2px solid rgba(255,255,255,0.5); font-weight: bold; font-size: 14px; cursor: pointer; z-index: 1000; backdrop-filter: blur(5px); pointer-events: auto; user-select: none; }
 #sound-btn:active { transform: scale(0.95); background: rgba(255,255,255,0.3); }
 
-/* --- GAYA MINIMAP --- */
-#minimap-container {
-    position: absolute;
-    top: 170px;  /* Posisi di bawah HUD Poin Ikan */
-    right: 20px;
-    width: 120px;
-    height: 120px;
-    border: 3px solid rgba(255, 255, 255, 0.7);
-    border-radius: 50%;
-    overflow: hidden;
-    z-index: 100;
-    background: #006994; /* Warna laut */
-    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-    pointer-events: none; /* Agar tidak menghalangi klik */
-}
+#minimap-container { position: absolute; top: 170px; right: 20px; width: 120px; height: 120px; border: 3px solid rgba(255, 255, 255, 0.7); border-radius: 50%; overflow: hidden; z-index: 100; background: #006994; box-shadow: 0 4px 15px rgba(0,0,0,0.5); pointer-events: none; }
 #minimap { width: 100%; height: 100%; }
 
 @media (max-width: 800px) { 
@@ -57,8 +52,6 @@ body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; 
     #chat-container { bottom: auto; top: 70px; width: 90%; left: 50%; transform: translateX(-50%); }
     #chat-toggle-btn { bottom: auto; top: 15px; padding: 8px 15px; font-size: 12px; }
     #sound-btn { top: 60px; left: 10px; padding: 8px 15px; font-size: 12px; }
-    
-    /* Penyesuaian Minimap & HUD Stats di Mobile */
     #hud-stats { top: 65px !important; right: 10px !important; padding: 8px 12px !important; font-size: 12px !important;}
     #minimap-container { top: 135px; right: 10px; width: 90px; height: 90px; border-width: 2px; }
 }
