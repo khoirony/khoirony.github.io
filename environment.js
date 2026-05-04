@@ -1,16 +1,19 @@
-// environment.js
 import * as THREE from 'three';
 
 export const solidGrounds = []; export const wallObjects = [];  
 export const interactiveHouses = []; export const beds = []; export const shops = [];
 export const torchLights = [];
 
+// --- OPTIMASI THREE.JS (GLOBAL GEOMETRY & MATERIAL) ---
+const pigBodyGeo = new THREE.BoxGeometry(0.8, 0.8, 1.2); const pigHeadGeo = new THREE.BoxGeometry(0.6, 0.6, 0.6); const pigLegGeo = new THREE.BoxGeometry(0.2, 0.4, 0.2); const pigMat = new THREE.MeshStandardMaterial({ color: 0xFFB6C1 });
+const treeTrunkGeo = new THREE.BoxGeometry(1, 3, 1); const treeWoodMat = new THREE.MeshStandardMaterial({ color: 0x8B4513 }); const treeLeavesGeo = new THREE.BoxGeometry(3, 3, 3); const treeLeafMat = new THREE.MeshStandardMaterial({ color: 0x228B22 });
+const torchPoleGeo = new THREE.CylinderGeometry(0.1, 0.1, 2, 8); const torchPoleMat = new THREE.MeshStandardMaterial({ color: 0x5c4033 }); const torchFireGeo = new THREE.ConeGeometry(0.25, 0.6, 8); const torchFireMat = new THREE.MeshBasicMaterial({ color: 0xffcc00 });
+
 function addWall(mesh) { mesh.updateMatrixWorld(true); wallObjects.push(new THREE.Box3().setFromObject(mesh)); }
 
 export function createWorld(scene) {
     const ocean = new THREE.Mesh(new THREE.PlaneGeometry(2000, 2000), new THREE.MeshStandardMaterial({ color: 0x006994, transparent: true, opacity: 0.8 }));
     ocean.rotation.x = -Math.PI / 2; ocean.position.y = -2; scene.add(ocean); 
-    // OCEAN DIHAPUS DARI SOLID GROUNDS AGAR TIDAK BISA DIINJAK
 
     const island = new THREE.Mesh(new THREE.CylinderGeometry(150, 160, 4, 64), new THREE.MeshStandardMaterial({ color: 0x4B8B3B }));
     island.position.y = -2; island.receiveShadow = true; scene.add(island); solidGrounds.push(island);
@@ -50,22 +53,25 @@ function createShop(scene, x, z, rotY = 0) {
 }
 
 export function createPigMesh() {
-    const pig = new THREE.Group(); const mat = new THREE.MeshStandardMaterial({ color: 0xFFB6C1 });
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 1.2), mat); body.position.y = 0.6; body.castShadow = true; const head = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), mat); head.position.set(0, 1, 0.6); head.castShadow = true; pig.add(body, head); 
-    function createLeg(lx, lz) { const legGroup = new THREE.Group(); const leg = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.4, 0.2), mat); leg.position.y = -0.2; leg.castShadow = true; legGroup.add(leg); legGroup.position.set(lx, 0.4, lz); return legGroup; }
+    const pig = new THREE.Group(); 
+    const body = new THREE.Mesh(pigBodyGeo, pigMat); body.position.y = 0.6; body.castShadow = true; 
+    const head = new THREE.Mesh(pigHeadGeo, pigMat); head.position.set(0, 1, 0.6); head.castShadow = true; pig.add(body, head); 
+    function createLeg(lx, lz) { const legGroup = new THREE.Group(); const leg = new THREE.Mesh(pigLegGeo, pigMat); leg.position.y = -0.2; leg.castShadow = true; legGroup.add(leg); legGroup.position.set(lx, 0.4, lz); return legGroup; }
     const legFL = createLeg(0.25, 0.4); const legFR = createLeg(-0.25, 0.4); const legBL = createLeg(0.25, -0.4); const legBR = createLeg(-0.25, -0.4); pig.add(legFL, legFR, legBL, legBR);
     return { mesh: pig, legs: [legFL, legFR, legBL, legBR] };
 }
 
 export function createTreeMesh() {
-    const group = new THREE.Group(); const trunk = new THREE.Mesh(new THREE.BoxGeometry(1, 3, 1), new THREE.MeshStandardMaterial({ color: 0x8B4513 })); trunk.position.y = 1.5; trunk.castShadow = true; group.add(trunk); const leaves = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshStandardMaterial({ color: 0x228B22 })); leaves.position.y = 4; leaves.castShadow = true; group.add(leaves);
+    const group = new THREE.Group(); 
+    const trunk = new THREE.Mesh(treeTrunkGeo, treeWoodMat); trunk.position.y = 1.5; trunk.castShadow = true; group.add(trunk); 
+    const leaves = new THREE.Mesh(treeLeavesGeo, treeLeafMat); leaves.position.y = 4; leaves.castShadow = true; group.add(leaves);
     return group;
 }
 
 export function createTorchMesh() {
     const group = new THREE.Group(); 
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 2, 8), new THREE.MeshStandardMaterial({ color: 0x5c4033 })); pole.position.y = 1; pole.castShadow = true; group.add(pole); 
-    const fire = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.6, 8), new THREE.MeshBasicMaterial({ color: 0xffcc00 })); fire.position.y = 2.3; fire.visible = false; group.add(fire); 
+    const pole = new THREE.Mesh(torchPoleGeo, torchPoleMat); pole.position.y = 1; pole.castShadow = true; group.add(pole); 
+    const fire = new THREE.Mesh(torchFireGeo, torchFireMat); fire.position.y = 2.3; fire.visible = false; group.add(fire); 
     const light = new THREE.PointLight(0xffaa00, 0, 25); light.position.y = 2.8; group.add(light);
     return { mesh: group, light: light, fire: fire };
 }
@@ -85,7 +91,6 @@ function createMountain(scene, x, z) { const mtn = new THREE.Mesh(new THREE.Cone
 function createLake(scene, x, z, radius) { 
     const water = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 0.5, 32), new THREE.MeshStandardMaterial({ color: 0x1E90FF, transparent: true, opacity: 0.8 })); 
     water.position.set(x, 0.1, z); scene.add(water); 
-    // AIR DANAU DIHAPUS DARI SOLID GROUNDS AGAR TIDAK BISA DIINJAK
     
     const sand = new THREE.Mesh(new THREE.TorusGeometry(radius + 1, 1, 8, 32), new THREE.MeshStandardMaterial({ color: 0xEEDC82 })); 
     sand.position.set(x, 0.15, z); sand.rotation.x = Math.PI / 2; scene.add(sand); solidGrounds.push(sand); 
