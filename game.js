@@ -3,7 +3,6 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createWorld, solidGrounds, wallObjects, interactiveHouses, beds, shops, createPigMesh, createTreeMesh, createTorchMesh, createMadingMesh } from './environment.js';
 import { initNetworking, remotePlayers, socket } from './networking.js';
 
-// 1. SETUP ALAM SEMESTA 3D (Scene, Camera, Renderer)
 const scene = new THREE.Scene(); 
 scene.background = new THREE.Color(0x87CEEB); 
 scene.fog = new THREE.Fog(0x87CEEB, 30, 150);
@@ -17,7 +16,6 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
 document.body.appendChild(renderer.domElement);
 
-// Pencahayaan
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); scene.add(ambientLight);
 const dirLight = new THREE.DirectionalLight(0xffffff, 1.0); 
 dirLight.position.set(50, 100, 50); dirLight.castShadow = true; 
@@ -26,10 +24,8 @@ dirLight.shadow.camera.top = 150; dirLight.shadow.camera.bottom = -150;
 dirLight.shadow.mapSize.width = 2048; dirLight.shadow.mapSize.height = 2048; 
 scene.add(dirLight);
 
-// Merender Dunia dari environment.js
 createWorld(scene);
 
-// 2. PEMBUATAN KARAKTER (Local Player)
 const player = new THREE.Group(); scene.add(player); 
 player.position.set(0, 5, 5); player.rotation.order = 'YXZ'; player.userData = {}; 
 
@@ -48,11 +44,9 @@ const armR = createLimb(0.25, 0.75, 0.25, 0xffccaa, 1.5); armR.position.x = -0.3
 const legL = createLimb(0.25, 0.75, 0.25, 0x0000aa, 0.75); legL.position.x = 0.125; player.add(legL); 
 const legR = createLimb(0.25, 0.75, 0.25, 0x0000aa, 0.75); legR.position.x = -0.125; player.add(legR);
 
-// Tongkat Pancing (Disembunyikan secara default)
 const fishingRod = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 2.5), new THREE.MeshStandardMaterial({ color: 0x5c4033 })); 
 fishingRod.position.set(0, -0.7, 1); fishingRod.visible = false; armR.add(fishingRod);
 
-// 3. KONTROL & INPUT
 const controls = new OrbitControls(camera, renderer.domElement); 
 controls.enableDamping = true; controls.maxPolarAngle = Math.PI / 2.1; 
 controls.minDistance = 2; controls.maxDistance = 20;
@@ -60,12 +54,10 @@ controls.minDistance = 2; controls.maxDistance = 20;
 let velocityY = 0; const gravity = -0.02; let isJumping = false; let moveTime = 0; 
 const playerBox = new THREE.Box3(); const raycaster = new THREE.Raycaster(); 
 
-// Input Keyboard
 const keys = { w: false, a: false, s: false, d: false, ' ': false }; const chatInput = document.getElementById('chat-input');
 window.addEventListener('keydown', (e) => { if(document.activeElement !== chatInput && keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = true; });
 window.addEventListener('keyup', (e) => { if(document.activeElement !== chatInput && keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = false; });
 
-// Input Joystick Mobile
 let joyX = 0, joyY = 0, isJoyActive = false; 
 const joystickManager = nipplejs.create({ zone: document.getElementById('joystick-zone'), mode: 'static', position: { left: '50%', top: '50%' }, color: 'white' }); 
 joystickManager.on('move', (evt, data) => { isJoyActive = true; joyX = data.vector.x; joyY = data.vector.y; }); 
@@ -74,7 +66,6 @@ const jumpBtn = document.getElementById('jump-btn');
 const triggerJump = (e) => { e.preventDefault(); if (!isJumping && !isSleeping && !isFishing && !isDrowning && !isShaking) { velocityY = 0.3; isJumping = true; } }; 
 jumpBtn.addEventListener('touchstart', triggerJump, { passive: false }); jumpBtn.addEventListener('mousedown', triggerJump);
 
-// 4. NETWORKING & STATE
 initNetworking(scene, player);
 
 let localPigs = {}; let localItems = {}; let carriedItemId = null; 
@@ -82,31 +73,85 @@ let localStats = { coins: 0, fish: 0, apples: 0 };
 let isFishing = false; let isDrowning = false; let isShaking = false;
 const uiCoins = document.getElementById('ui-coins'); const uiFish = document.getElementById('ui-fish'); const uiApples = document.getElementById('ui-apples');
 
-// 5. UPDATE UI MINIMAP
 const minimapCanvas = document.getElementById('minimap'); const mapCtx = minimapCanvas.getContext('2d');
 function updateMinimap() {
     if (!mapCtx) return; mapCtx.clearRect(0, 0, 120, 120);
-    mapCtx.fillStyle = '#4B8B3B'; mapCtx.beginPath(); mapCtx.arc(60, 60, 60, 0, Math.PI * 2); mapCtx.fill(); // Pulau
-    
-    // FIX MINIMAP: Koordinat Danau Baru (40, 35)
+    mapCtx.fillStyle = '#4B8B3B'; mapCtx.beginPath(); mapCtx.arc(60, 60, 60, 0, Math.PI * 2); mapCtx.fill(); 
     mapCtx.fillStyle = '#1E90FF'; mapCtx.beginPath(); mapCtx.arc(40 * 0.4 + 60, 35 * 0.4 + 60, 15 * 0.4, 0, Math.PI * 2); mapCtx.fill();
-    
-    // Titik Bangunan Utama
-    mapCtx.fillStyle = '#8b0000'; mapCtx.fillRect(-40 * 0.4 + 60 - 3, 40 * 0.4 + 60 - 3, 6, 6); // Rumah
-    mapCtx.fillStyle = '#00ffff'; mapCtx.fillRect(25 * 0.4 + 60 - 4, 50 * 0.4 + 60 - 4, 8, 8); // Toko
-    
-    // Titik Karakter Player
+    mapCtx.fillStyle = '#8b0000'; mapCtx.fillRect(-40 * 0.4 + 60 - 3, 40 * 0.4 + 60 - 3, 6, 6); 
+    mapCtx.fillStyle = '#00ffff'; mapCtx.fillRect(25 * 0.4 + 60 - 4, 50 * 0.4 + 60 - 4, 8, 8); 
     const px = player.position.x * 0.4 + 60; const pz = player.position.z * 0.4 + 60; 
     mapCtx.fillStyle = 'red'; mapCtx.beginPath(); mapCtx.arc(px, pz, 3, 0, Math.PI * 2); mapCtx.fill();
     const dir = new THREE.Vector3(); player.getWorldDirection(dir); 
     mapCtx.strokeStyle = 'white'; mapCtx.lineWidth = 2; mapCtx.beginPath(); mapCtx.moveTo(px, pz); mapCtx.lineTo(px + dir.x * 6, pz + dir.z * 6); mapCtx.stroke();
 }
 
-// 6. SOCKET EVENTS (Menangkap data dari server.js)
+// =======================================================================
+// FITUR BARU: ANIMASI FLOATING TEXT (+1 🍎, +15 💰)
+// =======================================================================
+const floatingTexts = []; // Array penyimpan teks yang sedang melayang
+
+function showFloatingText(message, colorHex) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256; canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    
+    // Setting Font Tebal ala Game
+    ctx.font = '900 50px "Segoe UI", Arial, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    
+    // Bikin garis tepi (Stroke) hitam agar terbaca di segala warna latar
+    ctx.lineWidth = 6; ctx.strokeStyle = '#000000'; 
+    ctx.strokeText(message, canvas.width / 2, canvas.height / 2);
+    
+    // Bikin warna isi (Fill)
+    ctx.fillStyle = colorHex; 
+    ctx.fillText(message, canvas.width / 2, canvas.height / 2);
+
+    // Jadikan material Sprite (Selalu menghadap kamera)
+    const tex = new THREE.CanvasTexture(canvas);
+    const spriteMat = new THREE.SpriteMaterial({ map: tex, transparent: true });
+    const sprite = new THREE.Sprite(spriteMat);
+    
+    // Munculkan secara acak sedikit di atas kepala karakter
+    sprite.position.set(
+        player.position.x + (Math.random() - 0.5), 
+        player.position.y + 2.5 + Math.random(), 
+        player.position.z + (Math.random() - 0.5)
+    );
+    sprite.scale.set(1.5, 0.75, 1);
+    
+    scene.add(sprite);
+    
+    // Daftarkan ke array untuk dianimasikan di Game Loop (life = 1.0 = Opacity 100%)
+    floatingTexts.push({ sprite: sprite, life: 1.0 });
+}
+
+// =======================================================================
+// UPDATE SOCKET.ON PADA PLAYERS
+// =======================================================================
 socket.on('updatePlayers', (serverPlayers) => {
     if (serverPlayers[socket.id]) { 
-        localStats.coins = serverPlayers[socket.id].coins; localStats.fish = serverPlayers[socket.id].fish; localStats.apples = serverPlayers[socket.id].apples;
-        uiCoins.innerText = localStats.coins; uiFish.innerText = localStats.fish; uiApples.innerText = localStats.apples;
+        let sData = serverPlayers[socket.id];
+
+        // LOGIKA PENGECEKAN PENAMBAHAN ITEM
+        let diffCoins = sData.coins - localStats.coins;
+        let diffFish = sData.fish - localStats.fish;
+        let diffApples = sData.apples - localStats.apples;
+
+        // JIKA BERTAMBAH, JALANKAN ANIMASI (Kita tidak animasikan kalau berkurang/dijual)
+        if (diffCoins > 0) showFloatingText(`+${diffCoins} 💰`, '#ffd700'); // Emas
+        if (diffFish > 0) showFloatingText(`+${diffFish} 🐟`, '#00ffff');   // Biru Ikan
+        if (diffApples > 0) showFloatingText(`+${diffApples} 🍎`, '#ff4444'); // Merah Apel
+
+        // Sinkronisasi data lokal ke UI HP
+        localStats.coins = sData.coins; 
+        localStats.fish = sData.fish; 
+        localStats.apples = sData.apples;
+        
+        uiCoins.innerText = localStats.coins; 
+        uiFish.innerText = localStats.fish; 
+        uiApples.innerText = localStats.apples;
     }
 });
 
@@ -152,7 +197,6 @@ socket.on('timeUpdate', (data) => {
     uiDay.innerText = `Day ${data.gameDay}`; uiClock.innerText = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`; uiPeriod.innerText = period;
 });
 
-// 7. RADIAL ACTION MENU
 const actionBtn = document.getElementById('action-btn'); 
 const actionMenu = document.getElementById('action-menu'); 
 const fadeOverlay = document.getElementById('fade-overlay');
@@ -181,21 +225,28 @@ actionBtn.addEventListener('click', () => {
 const soundBtn = document.getElementById('sound-btn'); const mySound = new Audio('hidup-jokowi.mp3'); mySound.volume = 0.5; 
 soundBtn.addEventListener('click', () => { mySound.currentTime = 0; mySound.play().catch(e => console.log(e)); });
 
-// =====================================================================
-// 8. THE GAME LOOP (Berjalan 60 Frame Per Detik)
-// =====================================================================
 function animate() {
     requestAnimationFrame(animate); 
     updateMinimap();
 
-    // Animasi Tambahan (Malam, Memancing, Memetik)
+    // EKSEKUSI ANIMASI FLOATING TEXT DI LOOP INI
+    for (let i = floatingTexts.length - 1; i >= 0; i--) {
+        let ft = floatingTexts[i];
+        ft.sprite.position.y += 0.03; // Tulisan perlahan melayang naik
+        ft.life -= 0.015; // Mengurangi umur tulisan (sekitar 1.5 detik memudar)
+        ft.sprite.material.opacity = ft.life; // Bikin memudar transparan
+        
+        if (ft.life <= 0) {
+            scene.remove(ft.sprite); // Kalau umurnya habis, hapus dari Map
+            floatingTexts.splice(i, 1); // Hapus dari array memori
+        }
+    }
+
     if (!isDay) { for(let id in localItems) { if (localItems[id].type === 'torch' && localItems[id].isLit) localItems[id].torchData.light.intensity = 120 + Math.random() * 50; } }
     if (isFishing) { let shake = Math.sin(Date.now() * 0.01) * 0.05; armR.rotation.x = -1.2 + shake; armL.rotation.x = -1.2 + shake; legL.rotation.x = 0; legR.rotation.x = 0; }
     if (isShaking) { player.rotation.y += Math.sin(Date.now() * 0.02) * 0.05; armL.rotation.x = -1.0; armR.rotation.x = -1.0; }
 
-    // DETEKSI TENGGELAM (DROWNING)
     let distCenter = Math.sqrt(player.position.x * player.position.x + player.position.z * player.position.z); 
-    // FIX DROWNING: Koordinat Danau Baru (40, 35)
     let distLake = Math.sqrt((player.position.x - 40)**2 + (player.position.z - 35)**2);
     
     if ((distCenter > 154 || distLake < 11) && !isDrowning && !isSleeping) {
@@ -207,46 +258,31 @@ function animate() {
 
     const currentSpeed = isRiding ? 0.45 : 0.25;
 
-    // RENDER POSISI ITEM & NPC
     for (let id in localItems) { let item = localItems[id]; if (item.carriedBy === socket.id) { item.group.position.set(player.position.x, player.position.y + 2.5, player.position.z); item.group.rotation.set(0, player.rotation.y, 0); item.group.scale.set(0.3, 0.3, 0.3); item.group.visible = true; } else if (item.carriedBy) { if (remotePlayers[item.carriedBy]) { let rp = remotePlayers[item.carriedBy]; item.group.position.set(rp.position.x, rp.position.y + 2.5, rp.position.z); item.group.rotation.set(0, rp.rotation.y, 0); item.group.scale.set(0.3, 0.3, 0.3); item.group.visible = true; } else { item.group.visible = false; } } else { item.group.position.set(item.targetX, 0, item.targetZ); item.group.rotation.set(0, item.targetRotY, 0); item.group.scale.set(1, 1, 1); item.group.visible = true; } }
     for (let id in localPigs) { let npc = localPigs[id]; npc.mesh.position.x = THREE.MathUtils.lerp(npc.mesh.position.x, npc.targetX, 0.2); npc.mesh.position.z = THREE.MathUtils.lerp(npc.mesh.position.z, npc.targetZ, 0.2); let rotDiff = npc.targetRotY - npc.mesh.rotation.y; rotDiff = Math.atan2(Math.sin(rotDiff), Math.cos(rotDiff)); npc.mesh.rotation.y += rotDiff * 0.2; if (npc.state === 'ridden') { if (npc.riddenBy === socket.id) { npc.mesh.position.set(player.position.x, player.position.y - 1.0, player.position.z); npc.mesh.rotation.y = player.rotation.y; npc.moveTime += 0.4; } else if (remotePlayers[npc.riddenBy]) { let otherP = remotePlayers[npc.riddenBy]; npc.mesh.position.set(otherP.position.x, otherP.position.y - 1.0, otherP.position.z); npc.mesh.rotation.y = otherP.rotation.y; npc.moveTime += 0.4; } } else { let npcGroundY = -5; raycaster.set(new THREE.Vector3(npc.mesh.position.x, npc.mesh.position.y + 1, npc.mesh.position.z), new THREE.Vector3(0, -1, 0)); let npcIntersects = raycaster.intersectObjects(solidGrounds, false); if (npcIntersects.length > 0) npcGroundY = npcIntersects[0].point.y; npc.velocityY += gravity; npc.mesh.position.y += npc.velocityY; if (npc.mesh.position.y <= npcGroundY) { npc.mesh.position.y = npcGroundY; npc.velocityY = 0; } if (npc.state === 'walking') npc.moveTime += 0.25; } if (npc.state === 'walking' || npc.state === 'ridden') { npc.legs[0].rotation.x = Math.sin(npc.moveTime) * 0.5; npc.legs[3].rotation.x = Math.sin(npc.moveTime) * 0.5; npc.legs[1].rotation.x = -Math.sin(npc.moveTime) * 0.5; npc.legs[2].rotation.x = -Math.sin(npc.moveTime) * 0.5; } else { npc.legs.forEach(leg => leg.rotation.x = THREE.MathUtils.lerp(leg.rotation.x, 0, 0.1)); } }
 
-    // RUMAH ATAP TRANSPARAN (Jika player masuk ke dalam)
     let isInsideHouse = false; for (let house of interactiveHouses) { if (house.box.containsPoint(player.position)) { house.roof.visible = false; isInsideHouse = true; } else { house.roof.visible = true; } }
     if (isInsideHouse) controls.maxDistance = 5; else controls.maxDistance = 20;
 
-    // DETEKSI AKSI TERSEDIA (Radial Menu)
     currentAvailableActions = []; 
     nearWater = (distCenter > 135 && distCenter < 160) || (distLake < 18); activeShop = null;
     for (let s of shops) { if (player.position.distanceTo(s.position) < 4.0) { activeShop = s; break; } }
 
     if (!isSleeping && !isFishing && !isDrowning && !isShaking) {
-        
-        // JIKA SEDANG MEMBAWA BARANG
         if (carriedItemId) { 
             currentAvailableActions.push({
                 label: `👇`, 
                 execute: () => { 
-                    let placeDir = new THREE.Vector3(); 
-                    player.getWorldDirection(placeDir); 
-                    
-                    // FIX: CEGAH KARAKTER STUCK KARENA COLLISION BOX
-                    placeDir.y = 0; 
-                    placeDir.normalize(); 
-                    // Jarak peletakan diperjauh jadi 4.0 meter agar aman dari kotak tabrakan objek besar
-                    let targetX = player.position.x + placeDir.x * 4.0; 
-                    let targetZ = player.position.z + placeDir.z * 4.0; 
-                    
-                    socket.emit('placeItem', { id: carriedItemId, x: targetX, z: targetZ, rotY: player.rotation.y }); 
-                    carriedItemId = null; 
+                    let placeDir = new THREE.Vector3(); player.getWorldDirection(placeDir); 
+                    placeDir.y = 0; placeDir.normalize(); 
+                    let targetX = player.position.x + placeDir.x * 4.0; let targetZ = player.position.z + placeDir.z * 4.0; 
+                    socket.emit('placeItem', { id: carriedItemId, x: targetX, z: targetZ, rotY: player.rotation.y }); carriedItemId = null; 
                 }
             });
         } 
-        // JIKA SEDANG NAIK BABI
         else if (isRiding) {
             currentAvailableActions.push({ label: '🚶', execute: () => { isRiding = false; mountedPig = null; socket.emit('unmountPig'); player.position.x += 1; player.position.y += 0.5; } });
         } 
-        // NORMAL STATE
         else {
             if (activeShop && (localStats.fish > 0 || localStats.apples > 0)) { currentAvailableActions.push({ label: '⚖️', execute: () => socket.emit('sellItems') }); }
             if (nearWater) { currentAvailableActions.push({ label: '🎣', execute: () => { isFishing = true; fishingRod.visible = true; actionBtn.innerHTML = '⏳'; actionBtn.style.pointerEvents = 'none'; setTimeout(() => { isFishing = false; fishingRod.visible = false; actionBtn.style.pointerEvents = 'auto'; actionBtn.innerHTML = '⚙️'; if (Math.random() > 0.4) { socket.emit('catchFish'); } }, 3000); } }); }
@@ -267,7 +303,6 @@ function animate() {
 
     if (currentAvailableActions.length > 0 && !isSleeping && !isFishing && !isDrowning && !isShaking) { actionBtn.style.display = 'flex'; if (actionMenu.style.display !== 'block' && actionBtn.innerHTML !== '⚙️') { actionBtn.innerHTML = '⚙️'; actionBtn.style.background = 'rgba(255, 215, 0, 0.8)'; actionBtn.style.color = 'black'; } } else { actionBtn.style.display = 'none'; actionMenu.style.display = 'none'; actionBtn.innerHTML = '⚙️'; actionBtn.style.background = 'rgba(255, 215, 0, 0.8)'; actionBtn.style.color = 'black'; }
 
-    // FISIKA PLAYER (Gravitasi & Pergerakan)
     if (isDrowning) { player.position.y -= 0.05; moveTime += 0.5; armL.rotation.x = Math.sin(moveTime) * 2; armR.rotation.x = -Math.sin(moveTime) * 2; armL.rotation.z = 1.0; armR.rotation.z = -1.0; }
 
     if (!isSleeping && !isDrowning && !isShaking) {
@@ -287,10 +322,8 @@ function animate() {
         } else if (!isFishing) { player.rotation.x = 0; if (isRiding) { armL.rotation.x = 0.4; armR.rotation.x = 0.4; legL.rotation.x = -0.4; legR.rotation.x = -0.4; } else { armL.rotation.x = THREE.MathUtils.lerp(armL.rotation.x, 0, 0.1); armR.rotation.x = THREE.MathUtils.lerp(armR.rotation.x, 0, 0.1); armL.rotation.z = THREE.MathUtils.lerp(armL.rotation.z, 0, 0.1); armR.rotation.z = THREE.MathUtils.lerp(armR.rotation.z, 0, 0.1); legL.rotation.x = THREE.MathUtils.lerp(legL.rotation.x, 0, 0.1); legR.rotation.x = THREE.MathUtils.lerp(legR.rotation.x, 0, 0.1); legL.rotation.z = 0; legR.rotation.z = 0; } }
     } 
 
-    // ANIMASI PEMAIN LAIN (Multiplayer)
     for (let id in remotePlayers) { const p = remotePlayers[id]; const anim = p.userData; const isMoving = p.position.distanceTo(anim.lastPos) > 0.01; if (isMoving) { anim.moveTime += 0.2; const mt = anim.moveTime; anim.armL.rotation.x = Math.sin(mt) * 0.8; anim.armR.rotation.x = -Math.sin(mt) * 0.8; anim.legL.rotation.x = -Math.sin(mt) * 0.8; anim.legR.rotation.x = Math.sin(mt) * 0.8; } else { anim.armL.rotation.x = THREE.MathUtils.lerp(anim.armL.rotation.x, 0, 0.1); anim.armR.rotation.x = THREE.MathUtils.lerp(anim.armR.rotation.x, 0, 0.1); anim.legL.rotation.x = THREE.MathUtils.lerp(anim.legL.rotation.x, 0, 0.1); anim.legR.rotation.x = THREE.MathUtils.lerp(anim.legR.rotation.x, 0, 0.1); } anim.lastPos.copy(p.position); }
     
-    // UPDATE KAMERA & RENDER
     controls.target.set(player.position.x, player.position.y + 1.5, player.position.z); 
     controls.update(); 
     renderer.render(scene, camera);
