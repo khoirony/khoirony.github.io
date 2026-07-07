@@ -11,7 +11,7 @@ if (!myPlayerId) {
 }
 let myUsername = localStorage.getItem('mmo_username') || "";
 
-export const socket = io("https://3dgame-api.khoirony.fun", { query: { playerId: myPlayerId } });
+export const socket = io("https://3dgame-api.khoirony.com", { query: { playerId: myPlayerId } });
 
 const onlineCountElement = document.getElementById('online-count');
 const onlineDot = document.getElementById('online-dot');
